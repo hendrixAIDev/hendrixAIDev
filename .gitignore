@@ -1,10 +1,10 @@
 # Runtime state
-board-review/PRECHECK_STATE.json
-board-review/BOARD_REVIEW_STATUS.md
+framework/board-review/PRECHECK_STATE.json
+framework/board-review/BOARD_REVIEW_STATUS.md
 
 # Evolver sensitive
-evolver/node_id.txt
-evolver/sandbox/
+framework/evolver/node_id.txt
+framework/evolver/sandbox/
 
 # Python
 __pycache__/
