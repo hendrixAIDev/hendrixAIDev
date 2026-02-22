@@ -195,4 +195,4 @@ This hybrid approach balances automation (CLI) with practicality (manual image u
 **Related:**
 - GitHub CLI docs: https://cli.github.com/manual/
 - GitHub API: https://docs.github.com/en/rest
-- Browser automation: `framework/SUBAGENT_BROWSER_PROFILE.md`
+- Browser automation: `framework/board-review/SUBAGENT_BROWSER_PROFILE.md`

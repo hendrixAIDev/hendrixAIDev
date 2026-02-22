@@ -6,12 +6,14 @@ Automated board review, ticket management, and AI-agent coordination.
 
 ```
 board-review/       # 7-phase automated pipeline (status-driven)
-  BOARD_REVIEW_TRIGGER.md   # CTO execution guide
-  CTO_PROMPT.md             # Stateless CTO session prompt
-  TICKET_SYSTEM.md          # Ticket labels, status workflow
-  REPOS.conf                # Monitored repos (single source of truth)
-  scripts/dispatch.sh       # Sub-agent dispatch (isolated cron jobs)
-  workflows/                # GitHub Actions (dependency unblocking)
+  BOARD_REVIEW_TRIGGER.md       # CTO execution guide
+  CTO_PROMPT.md                 # Stateless CTO session prompt
+  TICKET_SYSTEM.md              # Ticket labels, status workflow
+  REPOS.conf                    # Monitored repos (single source of truth)
+  SUBAGENT_BROWSER_PROFILE.md   # Browser profile allocation for sub-agents
+  GITHUB_SCREENSHOT_UPLOAD.md   # Screenshot upload via GitHub API
+  scripts/dispatch.sh           # Sub-agent dispatch (isolated cron jobs)
+  workflows/                    # GitHub Actions (dependency unblocking)
 
 roles/              # Sub-agent role definitions and overlays
   CONVENTIONS.md            # Engineering playbook
