@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:thread_safety", "infra:race_condition", "infra:cache", "mod:db_storage.py", "label:bug"],
+  "solution": "DatabaseStorage cache attributes (_cards_cache, _cards_index, _cache_valid) shared between main Streamlit thread and background ThreadPoolExecutor threads without synchronization. Fix: add threading.Lock (_cache_lock) to protect all cache reads and writes. Lock is NOT held during DB queries (only protects in-memory state) to prevent deadlocks.",
+  "summary": "Fix for: DatabaseStorage cache has no thread synchronization — race conditions between main and background threads",
+  "source_ticket": "#77",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.85,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 1, "lines": 40 }
+}

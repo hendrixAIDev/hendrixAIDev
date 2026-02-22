@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:css_specificity", "infra:streamlit_cloud", "infra:sidebar", "mod:design_system.py", "mod:app.py", "label:bug"],
+  "solution": "CSS rules hiding Streamlit chrome (header buttons) with aggressive selectors like [data-testid='stHeader'] button {display: none !important} also hide the sidebar collapse/expand toggle. On Streamlit Cloud, session restoration can collapse the sidebar — with toggle hidden, users can't re-expand. Fix: use high-specificity parent selectors to whitelist sidebar buttons: [data-testid='stHeader'] button[data-testid='stExpandSidebarButton'] {display: flex !important} — specificity (0,2,1) beats Streamlit design tokens (0,1,1). Also ensure st.set_page_config() is the FIRST Streamlit command (before any st.markdown CSS injection).",
+  "summary": "Fix for: Sidebar disappears — CSS specificity war with Streamlit design tokens hiding expand button",
+  "source_ticket": "#69",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.95,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 3, "lines": 50 }
+}

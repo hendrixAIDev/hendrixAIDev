@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:webhook", "infra:circuit_breaker", "infra:hmac", "mod:webhook.py", "mod:health_api.py", "label:enhancement"],
+  "solution": "Webhook receiver pattern for circuit-breaker: Use HMAC constant-time comparison (hmac.compare_digest) for auth, fail-closed when no secret configured (reject all), fail-open for UI (DB unreachable = assume enabled so users aren't blocked). Store feature flags in app_config table (key-value) and audit all webhook calls (authorized + rejected) in webhook_audit_log table.",
+  "summary": "Fix for: Circuit-breaker webhook receiver pattern with HMAC auth, fail-closed security, fail-open UI",
+  "source_ticket": "#55",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.90,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 5, "lines": 300 }
+}

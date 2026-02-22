@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:streamlit", "infra:toast_timing", "infra:callback", "mod:action_required_tab.py", "label:enhancement"],
+  "solution": "Setting a session_state flag in a callback then checking it in a rendering loop fails when the item moves between lists after the callback. Toast fires on wrong action (dismiss toast appears on restore). Fix: call st.toast() directly inside the callback function instead of using session_state polling patterns. Callbacks are the last reliable place to trigger immediate feedback.",
+  "summary": "Fix for: Toast notification fires on wrong action due to session_state polling after item moves between lists",
+  "source_ticket": "#65",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.85,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 2, "lines": 10 }
+}

@@ -1,0 +1,18 @@
+# Runtime state
+board-review/PRECHECK_STATE.json
+board-review/BOARD_REVIEW_STATUS.md
+
+# Evolver sensitive
+evolver/node_id.txt
+evolver/sandbox/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# DBs
+*.db
+
+# OS
+.DS_Store

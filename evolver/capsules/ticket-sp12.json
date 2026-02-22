@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:streamlit_cloud", "infra:secrets", "infra:env_vars", "mod:app.py", "label:bug"],
+  "solution": "Streamlit Cloud loads .streamlit/secrets.toml as st.secrets but does NOT inject into os.environ. Environment detection via os.getenv() alone fails on Streamlit Cloud. Fix: check three sources in priority order: (1) os.getenv() for local/.env, (2) st.secrets for Streamlit Cloud secrets, (3) a committed env_config.py module for branch-level defaults. Use try/except ImportError for the config module to gracefully handle absence on other branches.",
+  "summary": "Fix for: Streamlit Cloud secrets not in os.environ — need three-pronged env detection",
+  "source_ticket": "#12",
+  "source_repo": "hendrixAIDev/statuspulse",
+  "confidence": 0.90,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 2, "lines": 30 }
+}

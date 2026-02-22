@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:streamlit", "infra:cross_tab_sync", "infra:rerun", "mod:app.py", "errsig:StaleState", "label:bug"],
+  "solution": "Streamlit st.tabs() switching is purely client-side CSS visibility toggle — no server rerun occurs. When a @st.fragment updates data in one tab, sibling tabs keep their previously-rendered HTML. Fix: call st.rerun(scope='app') after mutations that need to be reflected in other tabs. This forces a full-app rerun so all tabs re-render with fresh data.",
+  "summary": "Fix for: Streamlit cross-tab state sync — tabs are CSS-only, need st.rerun(scope='app') after mutations",
+  "source_ticket": "#56",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.95,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 1, "lines": 13 }
+}

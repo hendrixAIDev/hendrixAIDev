@@ -1,0 +1,27 @@
+{
+  "type": "Capsule",
+  "signals": [
+    "infra:session_state",
+    "infra:stale",
+    "infra:sync",
+    "mod:st.fragment",
+    "mod:streamlit",
+    "label:bug",
+    "errsig:checkbox",
+    "infra:cache",
+    "infra:tab_switch"
+  ],
+  "solution": "Streamlit @st.fragment decorators don't re-run when session_state changes externally (e.g., from another tab/view). Fix: ensure each view re-reads from the authoritative data source (Supabase) on render, not from cached session_state. Use st.cache_data with TTL=0 or force re-query on tab switch by keying on the active tab. For checkbox state specifically, write to Supabase immediately on change and read back on every render — don't rely on session_state as the source of truth across views.",
+  "summary": "Fix for: Streamlit session_state not syncing across tabs/views when using @st.fragment",
+  "source_ticket": "#71",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.95,
+  "success_streak": 2,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": {
+    "files": 3,
+    "lines": 15
+  },
+  "last_used": 1771724015.153061,
+  "last_outcome": "success"
+}

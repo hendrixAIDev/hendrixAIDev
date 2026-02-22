@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:stale_reference", "infra:optimistic_update", "mod:action_required_tab.py", "mod:optimistic.py", "label:bug"],
+  "solution": "When Action Required tab used mark_credit_used() with a stale cached card reference then called storage.update_card() synchronously, last_used_period could be written as NULL. Fix: use the same optimistic_update_credit_usage() function that the Dashboard uses — it fetches fresh card from cache, creates a copy with correct period string, updates cache immediately, and queues DB write in background thread.",
+  "summary": "Fix for: Action Required checkbox writes NULL last_used_period due to stale card reference",
+  "source_ticket": "#57",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.85,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 1, "lines": 24 }
+}

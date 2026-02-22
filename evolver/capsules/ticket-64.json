@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:streamlit", "infra:rerun", "mod:empty_state.py", "label:bug"],
+  "solution": "In Streamlit, setting session_state flags in a button callback without calling st.rerun() means the UI won't update — the flag is set but Streamlit doesn't re-render. Fix: always call st.rerun() after on_click callbacks that change navigation state. Pattern: callback sets flag → st.rerun() → next render reads flag and renders target view.",
+  "summary": "Fix for: Streamlit button callback sets state but no st.rerun() — UI doesn't navigate",
+  "source_ticket": "#64",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.95,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 1, "lines": 6 }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:cascade_delete", "infra:account_deletion", "infra:orphaned_data", "mod:auth.py", "label:bug"],
+  "solution": "When adding new tables to the schema, always update delete_account() to include them. Missing tables means orphaned user data persists after account deletion (GDPR risk). Better: rely on ON DELETE CASCADE from FK constraints for most tables, and only manually delete tables without FKs (like feedback by user_email). Defense-in-depth: explicit DELETE + CASCADE.",
+  "summary": "Fix for: delete_account() misses new tables — orphaned data after account deletion",
+  "source_ticket": "#76",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.85,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 1, "lines": 10 }
+}

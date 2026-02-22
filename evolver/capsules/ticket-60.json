@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:streamlit", "infra:multi_page", "mod:pages", "errsig:StreamlitMultiPage", "label:bug"],
+  "solution": "Any .py file placed directly in a Streamlit pages/ directory (adjacent to the main script) triggers automatic multi-page app detection, adding unwanted sidebar navigation links. Fix: prefix files with underscore (_auth_page.py) to exclude from detection, OR use subdirectories (pages/card_management/) which Streamlit doesn't scan recursively.",
+  "summary": "Fix for: Streamlit auto-detects pages/ directory files as multi-page nav — use underscore prefix or subdirectories",
+  "source_ticket": "#60",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.95,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 3, "lines": 10 }
+}

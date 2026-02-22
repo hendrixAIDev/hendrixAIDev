@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["errsig:AttributeError", "infra:streamlit", "infra:callback_scope", "mod:action_required_tab.py", "label:bug"],
+  "solution": "Streamlit callbacks execute in a different rerun scope where outer local variables may not be available. Using a local `storage` variable in a callback function causes AttributeError. Fix: use st.session_state.storage instead of the local variable — session_state persists across reruns and is accessible from callbacks.",
+  "summary": "Fix for: AttributeError in Streamlit callback — use st.session_state.storage instead of local variable",
+  "source_ticket": "#70",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.95,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 1, "lines": 4 }
+}

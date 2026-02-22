@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:cartesian_product", "infra:sql_join", "infra:duplicate_data", "mod:db_storage.py", "errsig:DuplicateRows", "label:bug"],
+  "solution": "Simultaneous LEFT JOINs across multiple related tables (card_credits × credit_usage × retention_offers × product_changes) produce Cartesian products before GROUP BY + JSON_AGG. Fix: use pre-aggregated subquery JOINs — each table is aggregated independently (GROUP BY card_id) in a subquery, then LEFT JOINed to the main table. Also add Python-level dedup as belt-and-suspenders safety net. Additionally, Streamlit Cloud hot-reloads app.py but does NOT reload imported modules — use importlib.reload() for critical modules.",
+  "summary": "Fix for: Cartesian product in multi-table LEFT JOIN causing duplicate benefits + Streamlit Cloud module caching",
+  "source_ticket": "#66",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.95,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 2, "lines": 80 }
+}

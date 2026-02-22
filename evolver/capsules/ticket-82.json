@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["errsig:SyntaxWarning", "errsig:ImportError", "label:lint", "label:code-quality"],
+  "solution": "Run ruff check --fix on affected files. Config at projects/ruff.toml. Common fixes: bare except → except Exception, unused imports, f-string without placeholders, mutable default arguments.",
+  "summary": "Fix for: Lint violations across Python codebase",
+  "source_ticket": "#82",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.85,
+  "success_streak": 1,
+  "created": "2026-02-20T00:00:00Z",
+  "blast_radius": { "files": 205, "lines": 674 }
+}

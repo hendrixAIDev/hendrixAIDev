@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:streamlit", "infra:double_click", "infra:rerun", "mod:edit_card.py", "mod:card_display.py", "label:enhancement"],
+  "solution": "Streamlit's if st.button() pattern causes the page to rerun top-to-bottom. If editing_key is evaluated BEFORE the button callback runs, the form renders again on the same pass. Fix: on successful save, set a save_success_{id} flag in session_state, set editing_key=False, then call st.rerun(). On the next render, check for the flag and display success message after the form is already collapsed.",
+  "summary": "Fix for: Streamlit edit form requires double-click to collapse — use flag + st.rerun() pattern",
+  "source_ticket": "#67",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.90,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 2, "lines": 30 }
+}

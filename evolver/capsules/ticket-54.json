@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:schema_drift", "infra:duplicate_code", "mod:health_api", "mod:health.py", "label:bug"],
+  "solution": "When a FastAPI wrapper (health_api.py) reimplements logic already in a core module (health.py), schema drift occurs. Fix: have the API layer call the core function directly instead of maintaining duplicate implementations. health_api.py should import and call get_capability_status() from src.core.health, not reimplement the capability checks.",
+  "summary": "Fix for: SCHP health endpoint schema drift between core module and API layer due to duplicate implementations",
+  "source_ticket": "#54",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.90,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 2, "lines": 170 }
+}

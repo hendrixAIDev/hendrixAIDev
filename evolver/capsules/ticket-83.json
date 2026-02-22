@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["errsig:ModuleNotFoundError", "mod:src.core.exceptions", "infra:reload", "infra:cache", "infra:stale", "label:bug"],
+  "solution": "Add the missing module to the _RELOAD_MODULES list in src/ui/app.py. Streamlit Cloud caches modules across reruns — any new core module must be in the reload chain or it causes ModuleNotFoundError on cold restart.",
+  "summary": "Fix for: Streamlit Cloud ModuleNotFoundError on cold restart",
+  "source_ticket": "#83",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.9,
+  "success_streak": 1,
+  "created": "2026-02-21T20:00:00Z",
+  "blast_radius": { "files": 1, "lines": 3 }
+}

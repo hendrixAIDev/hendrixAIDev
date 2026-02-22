@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["errsig:OperationalError", "infra:timeout", "mod:psycopg2", "mod:sqlalchemy", "label:bug"],
+  "solution": "Use Supabase pooler connection (port 6543) instead of direct connection (port 5432). Direct connections fail on IPv6-only networks. Connection string format: postgresql://user:pass@host:6543/postgres",
+  "summary": "Fix for: Supabase IPv6 connection failure",
+  "source_ticket": "#78",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.95,
+  "success_streak": 2,
+  "created": "2026-02-14T00:00:00Z",
+  "blast_radius": { "files": 1, "lines": 1 }
+}

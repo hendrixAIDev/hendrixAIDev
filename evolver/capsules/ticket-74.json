@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:connection_drop", "infra:retry", "infra:supabase", "mod:db_storage.py", "errsig:OperationalError", "label:bug"],
+  "solution": "DB write operations (save_card, update_card) without retry logic can lose data on transient connection failures (PgBouncer timeout, network blip). Fix: extract core logic into _do_save_card() helper, wrap with retry pattern (max 2 attempts). On OperationalError, call _reset_thread_connection() to get fresh connection, retry once. On second failure, raise the exception (don't swallow).",
+  "summary": "Fix for: save_card() has no retry logic — connection drop causes data loss",
+  "source_ticket": "#74",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.85,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 1, "lines": 40 }
+}

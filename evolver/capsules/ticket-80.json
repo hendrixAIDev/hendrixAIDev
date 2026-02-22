@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:global_state", "infra:cross_user", "infra:streamlit_cloud", "mod:optimistic.py", "label:bug"],
+  "solution": "Module-level global lists (_failed_operations) in Streamlit are shared across all user sessions on the same worker. Failures from User A can be shown to User B. Fix: tag each failure entry with user_id at queue time, then filter by storage.user_id at drain time in check_pending_failures(). Background threads can't access st.session_state, so global list with user_id scoping is the correct approach.",
+  "summary": "Fix for: Global _failed_operations list causes cross-user error leakage on Streamlit Cloud",
+  "source_ticket": "#80",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.85,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 2, "lines": 25 }
+}

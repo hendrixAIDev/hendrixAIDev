@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:toctou", "infra:race_condition", "infra:transaction", "mod:auth.py", "label:bug"],
+  "solution": "change_password() verified old password in one transaction then updated in a separate transaction — TOCTOU race condition. Fix: combine into single transaction with SELECT ... FOR UPDATE row-level lock. Pre-compute hash_password() (CPU-intensive) before opening the transaction to minimize lock hold time.",
+  "summary": "Fix for: change_password() TOCTOU race — two separate transactions should be one with FOR UPDATE",
+  "source_ticket": "#79",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.90,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 1, "lines": 15 }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "Capsule",
+  "signals": ["infra:foreign_key", "infra:type_mismatch", "infra:orphaned_data", "mod:annual_fee_dismissals", "label:bug"],
+  "solution": "New tables referencing cards must use UUID type (not TEXT) with FK constraint REFERENCES cards(id) ON DELETE CASCADE. TEXT card_id means no referential integrity, no cascade delete, and implicit casting issues. Fix migration: ALTER COLUMN card_id TYPE UUID USING card_id::uuid, then ADD CONSTRAINT ... FOREIGN KEY ... ON DELETE CASCADE. Clean up orphaned records first.",
+  "summary": "Fix for: annual_fee_dismissals.card_id is TEXT not UUID — no FK, no CASCADE, type mismatch",
+  "source_ticket": "#75",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.90,
+  "success_streak": 1,
+  "created": "2026-02-21T00:00:00Z",
+  "blast_radius": { "files": 1, "lines": 15 }
+}

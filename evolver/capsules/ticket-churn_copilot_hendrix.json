@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "84",
+  "summary": "Fix for: Issue #churn_copilot_hendrix",
+  "source_ticket": "#churn_copilot_hendrix",
+  "source_repo": "hendrixAIDev",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-02-22T06:03:42Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}
