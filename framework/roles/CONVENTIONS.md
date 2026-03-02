@@ -24,29 +24,27 @@
 
 ---
 
-## 🔍 Code Search — Understand Before You Modify
+## 🔍 Code Navigation — Understand Before You Modify
 
-Before modifying any code, **search the codebase** to understand context:
+Before modifying any code, **search and navigate the codebase** to understand context:
 
 ```bash
-# Search for relevant code
-python3 framework/tools/code_search.py search "what you're working on"
+# Keyword search (grep — any language, always fresh)
+rg -n "save_card" src/ --glob='*.py'
 
-# Examples:
-python3 framework/tools/code_search.py search "authentication login"
-python3 framework/tools/code_search.py search "save card optimistic locking"
-python3 framework/tools/code_search.py search "benefit checkbox credit usage"
+# Code navigation (goto-definition, find-references — Python)
+# Read the code-nav skill (skills/code-nav/SKILL.md) for full usage
+# Read skills/code-nav/SKILL.md for full usage
+bash skills/code-nav/scripts/code-nav.sh refs src/core/db_storage.py 494 8    # who calls save_card?
+bash skills/code-nav/scripts/code-nav.sh goto src/core/db_storage.py 531 18   # follow a symbol
+bash skills/code-nav/scripts/code-nav.sh names src/ --type class              # list all classes
 ```
 
-Returns ranked results with file paths, line numbers, and code snippets. Use this BEFORE reading files — it tells you where to look.
-
 **Combined workflow:**
-1. **Code search** → find relevant files and functions
-2. **Dependency graph** → check what depends on what you're changing
-3. **Read the specific files** → understand the implementation
+1. **grep/rg** → find relevant files and lines
+2. **code-nav refs** → check what depends on what you're changing
+3. **Read the specific sections** → understand the implementation
 4. **Make changes** → with full context
-
-The search index auto-updates on every git commit (post-commit hook). 1,750+ chunks across all projects.
 
 ---
 
@@ -439,19 +437,17 @@ read(path="memory/2026-02-16.md", offset=-20)  # Read last 20 lines
 
 | From | To | When |
 |------|----|----|
-| NEW | ASSIGNED + role:* | CTO triages and assigns role |
-| ASSIGNED (role:backend/frontend) | IN PROGRESS | Engineer starts working |
-| IN PROGRESS | ASSIGNED + role:review | Engineer done → flips role to code review |
-| ASSIGNED (role:review) | ASSIGNED + role:qa | Code review passes (APPROVE) |
-| ASSIGNED (role:review) | ASSIGNED + role:backend | Code review rejects (REQUEST CHANGES) |
-| IN PROGRESS | NEEDS_JJ | Can't proceed, need JJ's help |
-| ASSIGNED (role:qa) | QA_REVIEW | CTO dispatches QA agent |
-| QA_REVIEW | CTO_REVIEW | QA tests pass |
-| QA_REVIEW | ASSIGNED | **QA tests fail** (back to queue) |
-| QA_REVIEW | NEEDS_JJ | QA needs manual verification |
-| CTO_REVIEW | DONE | CTO approves |
-| CTO_REVIEW | NEEDS_JJ | CTO needs JJ decision/verification |
-| NEEDS_JJ | ASSIGNED | JJ provides input (back to queue) |
+| `status:new` | `status:in-progress` | CTO triages and dispatches engineer |
+| `status:in-progress` | `status:review` | Engineer done → ready for code review |
+| `status:review` | `status:in-progress` | CTO dispatches code reviewer |
+| `status:in-progress` | `status:verification` | Code review passes |
+| `status:in-progress` | `status:new` | Code review rejects (with feedback) |
+| `status:verification` | `status:in-progress` | CTO dispatches QA |
+| `status:in-progress` | `status:cto-review` | QA merges to experiment + tests pass |
+| `status:in-progress` | `status:new` | QA fails (with feedback) |
+| `status:cto-review` | `status:done` (CLOSED) | CTO approves |
+| `status:cto-review` | `status:new` | CTO rejects |
+| Any | `status:needs-jj` | CTO needs CEO decision (Phase 1 only) |
 
 **Always update labels via GitHub CLI and add comment explaining status change.**
 
@@ -496,36 +492,33 @@ read(path="memory/2026-02-16.md", offset=-20)  # Read last 20 lines
 
 ---
 
-## 🔄 Engineer → Code Review Handoff (Automatic Pipeline)
+## 🔄 Engineer → Code Review Handoff
 
 **When your engineering work is complete and tested locally:**
 
-You do NOT set `status:qa-review` directly. Instead, you **flip the role to `review`** and keep status as assigned, which re-triggers the CTO to dispatch a code review agent automatically.
+Set `status:review` to trigger the next phase. **Stay on your local feature branch — do NOT push to experiment.**
 
 **Steps:**
 ```bash
-# 1. Remove your engineering role, add review role
+# 1. Set status:review (triggers CTO to dispatch code reviewer)
 gh issue edit <number> --repo hendrixAIDev/<repo> \
-  --remove-label "role:backend" \
-  --remove-label "role:frontend" \
   --remove-label "status:in-progress" \
-  --add-label "role:review" \
-  --add-label "status:assigned"
+  --add-label "status:review"
 
 # 2. Post completion comment (see template below)
 # 3. LEAVE ISSUE OPEN
 ```
 
-**Pipeline flow:** Engineer → Code Review → QA → CTO
-- Precheck detects `status:assigned` → triggers CTO → CTO sees `role:review` → spawns code review agent
-- Code review passes → reviewer sets `role:qa` → precheck re-triggers → CTO spawns QA
-- Code review fails → reviewer sets `role:backend` with feedback → engineer reworks
+**Pipeline flow:** Engineer (local branch) → Code Review (local branch) → QA (local branch → experiment) → CTO
+- Precheck detects `status:review` → triggers CTO → CTO dispatches code reviewer
+- Code review passes → `status:verification` → CTO dispatches QA
+- QA merges to experiment, tests on experiment endpoint → `status:cto-review`
+- Code review fails → `status:new` with feedback → engineer reworks
 
 **What NOT to do:**
-- ❌ Set `status:qa-review` yourself (CTO manages QA dispatch)
-- ❌ Skip code review by setting `role:qa` directly
+- ❌ Push to `experiment` (only QA does this)
+- ❌ Set `status:verification` or `status:cto-review` yourself
 - ❌ Close the issue
-- ❌ Leave `role:backend` on the ticket (review agent won't be spawned)
 
 ---
 
@@ -567,26 +560,30 @@ CEO: Test on `experiment` → Approve merge to `main` (production)
 
 **Deployment Workflow (for deployable projects like ChurnPilot):**
 
-1. **Agent implements fix** → Push to `experiment` branch
-2. **CTO reviews & tests** → Verifies fix works
-3. **CTO closes ticket** → Fix is now live on `experiment` endpoint
-4. **CTO notifies CEO** → "Ready on `experiment`, awaiting CEO approval for `main`"
-5. **CEO tests on `experiment`** → Verifies production readiness
-6. **CEO authorizes merge to `main`** → Only CEO can approve production deployment
+1. **Engineer implements fix** → Works on **local feature branch** (e.g., `fix/cp84-benefits-sync`)
+2. **Code Reviewer reviews** → Reviews code on the local branch
+3. **QA Engineer reviews tests** → Reviews unit/E2E tests on the local branch
+4. **QA Engineer merges to `experiment`** → Merges local branch into `experiment` and pushes
+5. **QA Engineer tests on experiment** → Browser automation on experiment endpoint
+6. **CTO reviews & closes ticket** → Verifies QA report, closes issue
+7. **CEO tests on `experiment`** → Verifies production readiness
+8. **CEO authorizes merge to `main`** → Only CEO can approve production deployment
 
 **Authority Boundaries:**
 
 | Action | Authority |
 |--------|-----------|
+| Work on local feature branch | Engineer |
+| Review code on local branch | Code Reviewer |
+| Merge to `experiment` + test | QA Engineer |
 | Close tickets | CTO (Hendrix) |
-| Deploy to `experiment` | CTO (Hendrix) |
 | Technical decisions | CTO (Hendrix) |
 | **Merge to `main`** | **CEO (JJ) ONLY** |
 | Legal/financial decisions | CEO (JJ) ONLY |
 | Strategic direction | CEO (JJ) ONLY |
 
 **When closing a ticket, CTO should note:**
-> "Fix verified and deployed to `experiment`. Ticket closed. **Ready for CEO testing on experiment endpoint. Awaiting CEO approval for merge to `main`.**"
+> "QA verified on `experiment`. Ticket closed. **Ready for CEO testing on experiment endpoint. Awaiting CEO approval for merge to `main`.**"
 
 **Never say:**
 - ❌ "Approved for merge to main" (only CEO approves)
@@ -679,7 +676,7 @@ CEO: Test on `experiment` → Approve merge to `main` (production)
 
 ## 🚀 Deploy Smoke Test Verification
 
-**Post-deploy smoke tests gate both experiment and production deploys.** The smoke test runs automatically in the board review pipeline (see `BOARD_REVIEW_TRIGGER.md` Phase 4 and Phase 5).
+**Post-deploy smoke tests gate both experiment and production deploys.** The smoke test runs automatically in the board review pipeline (see `BOARD_REVIEW.md` Phase 4 and Phase 5).
 
 ### How It Works
 

@@ -1,5 +1,42 @@
 # Code Review Overlay — Hendrix/JJ Context
 
+## Worktree Convention
+
+**The engineer creates a worktree at `/tmp/wt/{repo-short}-{ticket-num}`. Navigate to it — do NOT checkout the branch separately.**
+
+```bash
+REPO_SHORT=$(basename "$(git remote get-url origin)" | sed 's/\.git$//' \
+  | sed 's/churn_copilot_hendrix/churn/;s/character-life-sim/clse/;s/statuspulse/sp/')
+WT_PATH="/tmp/wt/${REPO_SHORT}-<TICKET_NUM>"
+cd "$WT_PATH"
+```
+
+If the worktree doesn't exist, the engineer did not complete setup — reject with a note.
+
+**You review code in the worktree** (not experiment). Use `git diff origin/experiment..HEAD` to see changes. You do NOT merge or push to experiment — that's QA's job after you approve.
+
+On rejection: describe exactly what needs to change. **Do NOT remove the worktree** — CTO decides roll-forward (fix in existing worktree) or roll-back (fresh worktree from `origin/experiment`).
+
+---
+
+## Review Gates (run in order — exit early on any failure)
+
+### GATE 0 — Scope check (before lint, before reading code)
+
+```bash
+git diff origin/experiment..HEAD --stat
+```
+
+If the diff includes files unrelated to the ticket → **IMMEDIATE REJECT**. List the out-of-scope files in your rejection comment.
+
+### GATE 1 — Scoped lint check
+
+```bash
+git diff origin/experiment..HEAD --name-only | grep '\.py$' | xargs -r ruff check
+```
+
+If any violations reported → **IMMEDIATE REJECT**. Pre-existing violations in untouched files are NOT a rejection reason.
+
 ## Review Standards for BUILD & SERVE Phase
 
 **Philosophy:** Ship fast but ship correct. Reviews should catch real bugs, not bikeshed style.
@@ -31,14 +68,21 @@
 
 ## Tools Available
 
-Code search + dependency graph are in the shared overlay ("Code Intelligence" section). Additionally for reviews:
+Use `rg` for keyword search and `code-nav` for semantic Python navigation. Read `skills/code-nav/SKILL.md` for full usage.
 
 ```bash
+# Keyword search
+rg -n "function_name" src/ --glob='*.py'
+
+# Code navigation (read skills/code-nav/SKILL.md for full usage)
+bash skills/code-nav/scripts/code-nav.sh refs src/core/file.py 42 8    # who calls this?
+bash skills/code-nav/scripts/code-nav.sh goto src/core/file.py 42 8    # where is this defined?
+
 # Run linter
 ruff check --config projects/ruff.toml projects/churn_copilot/
 
 # Run tests
-cd projects/churn_copilot/app && python -m pytest tests/ -v
+cd projects/churn_copilot && python -m pytest tests/ -v
 
 # View diff for a branch
 git diff experiment..branch-name

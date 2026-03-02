@@ -1,13 +1,13 @@
 {
   "type": "Capsule",
   "signals": [],
-  "solution": "107",
-  "summary": "Fix for: Issue #churn_copilot_hendrix",
-  "source_ticket": "#churn_copilot_hendrix",
+  "solution": "33",
+  "summary": "Fix for: Issue #statuspulse",
+  "source_ticket": "#statuspulse",
   "source_repo": "hendrixAIDev",
   "confidence": 0.8,
   "success_streak": 1,
-  "created": "2026-03-01T23:52:04Z",
+  "created": "2026-02-25T07:17:14Z",
   "blast_radius": {
     "files": 1,
     "lines": 10

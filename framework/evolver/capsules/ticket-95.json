@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "psycopg2 cannot serialize uuid.UUID objects — cast to str() before passing to cursor.execute(). PostgreSQL auto-casts UUID strings to UUID column type.",
+  "summary": "Fix for: Instrument analytics events for ChurnPilot",
+  "source_ticket": "#95",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-02-25T17:52:12Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

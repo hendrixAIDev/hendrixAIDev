@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "pytest conftest fixtures, MockLLMProvider with queued responses, deterministic test data generation",
+  "summary": "Fix for: Issue #Test infrastructure with shared fixtures, mock LLM provider, and 40+ integration tests covering config→memory→LLM→retrieval pipeline",
+  "source_ticket": "#Test infrastructure with shared fixtures, mock LLM provider, and 40+ integration tests covering config→memory→LLM→retrieval pipeline",
+  "source_repo": "character-life-sim#9",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-02-28T23:23:30Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

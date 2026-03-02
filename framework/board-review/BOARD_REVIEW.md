@@ -30,7 +30,7 @@ You're an isolated session. Load these first:
 **CTO sessions are stateless.** Process what's available NOW, then exit. Do NOT wait for sub-agents to finish.
 
 **Correct flow:**
-1. Run all 7 phases against current ticket states
+1. Run all 6 phases against current ticket states
 2. Dispatch sub-agents for any actionable work
 3. Send Slack report, update status file
 4. **EXIT immediately**
@@ -55,10 +55,10 @@ status:new → status:in-progress → status:review → status:verification → 
 | Status | Meaning | Who acts |
 |--------|---------|----------|
 | `status:new` | Needs triage + dispatch | CTO (Phase 1) |
-| `status:in-progress` | Engineer working | Sub-agent |
-| `status:review` | Code review needed | CTO dispatches reviewer (Phase 3) |
-| `status:verification` | QA needed | CTO dispatches QA (Phase 4) |
-| `status:cto-review` | Final approval | CTO (Phase 5) |
+| `status:in-progress` | Sub-agent working | Sub-agent |
+| `status:review` | Code review needed | CTO dispatches reviewer (Phase 2) |
+| `status:verification` | QA needed | CTO dispatches QA (Phase 3) |
+| `status:cto-review` | Final approval | CTO (Phase 4) |
 | `status:done` | Closed | — |
 | `status:blocked` | Waiting on dependency | CTO re-checks in Phase 1 |
 | `status:needs-jj` | CEO decision required | CEO (only set by CTO in Phase 1) |
@@ -71,7 +71,7 @@ status:new → status:in-progress → status:review → status:verification → 
 
 ---
 
-## 7-Phase Workflow
+## 6-Phase Workflow
 
 ### 1. TRIAGE & DISPATCH
 **Trigger:** `status:new`
@@ -84,6 +84,8 @@ For each `status:new` ticket:
 3. Check dependencies
 4. Classify and add a comment explaining what needs to be done
 5. Set `status:in-progress` and spawn the engineer sub-agent
+
+**Branch rules for engineers:** Engineers work on a **local feature branch** (e.g., `fix/cp84-benefits-sync`). They do NOT push to `experiment`. The experiment branch is only touched by QA after code review passes.
 
 **Feature tickets:** A ticket's existence IS the CEO's product decision. The CTO owns execution prioritization. Do NOT leave features as `status:new` "awaiting CEO." Only use `status:needs-jj` for genuine unresolved CEO decisions (pricing, legal, strategic pivots).
 
@@ -100,7 +102,7 @@ If a capsule matches, add "Known Solution Hint" in the ticket comment.
 
 **Spawning agents:** Use the dispatch script (NOT `sessions_spawn`):
 ```bash
-bash framework/board-review/scripts/dispatch.sh \
+bash skills/dispatch-agent/scripts/dispatch.sh \
   --name "eng-sp26-migration" \
   --message "<task prompt with all context>"
 ```
@@ -117,37 +119,47 @@ Every spawn prompt includes:
 - Required first reads: `PROJECT_STRUCTURE.md`, `TICKET_SYSTEM.md`
 - **Explicit instruction to update ticket label when done** (e.g., `status:in-progress` → `status:review`)
 
-### 2. WATCHDOG
-Monitor `status:in-progress` agents. Flag idle >30min and set it back to `status:new`, escalate stalls >2h.
-
-### 3. CODE REVIEW
+### 2. CODE REVIEW
 **Trigger:** `status:review`
 
-Spawn code reviewer. If approved → set `status:verification`.
+1. Set `status:in-progress` on the ticket (prevents double-dispatch)
+2. Spawn code reviewer to review the **local feature branch** (not experiment)
+3. Reviewer sets `status:verification` when approved (or `status:new` on rejection)
 
-### 4. QA REVIEW
+### 3. QA REVIEW
 **Trigger:** `status:verification`
 
-**Never skip QA.** Spawn QA agent with `qa-overlay.md`.
+**Never skip QA.**
+
+1. Set `status:in-progress` on the ticket (prevents double-dispatch)
+2. Spawn QA agent with `qa-overlay.md`
 
 QA responsibilities:
-1. Review the code changes, see if there is necessary unit test or end to end test missing.
-2. If code looks good, push to `experiment` branch
+1. Review the code changes on the **local feature branch** — check for missing unit tests or E2E tests
+2. If code and tests look good, **merge the local branch into `experiment`** and push
 3. Test on the experiment endpoint using browser automation (never localhost)
 
-If passed → set `status:cto-review`.
+QA sets `status:cto-review` when passed (or `status:new` on failure).
 
-### 5. CTO REVIEW
+### 4. CTO REVIEW
 **Trigger:** `status:cto-review`
 
 **⛔ PRE-CHECK:** Verify QA Verification Report exists on the ticket. If missing → set `status:verification`.
 
 If QA passed: review the work → if approved → close issue with `status:done`.
 
-### 6. REPORTING
-Post Slack summary if ≥60min since last report, ticket closed, new blocker, or agent failed. Update `lastSummaryTime` in `PRECHECK_STATE.json`.
+### 5. REPORTING
+Post Slack summary ONLY on meaningful events:
+- Ticket closed (CTO approved)
+- New blocker or escalation (`status:needs-jj`)
+- Sub-agent failure requiring attention
+- ≥60 min since last report (periodic heartbeat)
 
-### 7. HOUSEKEEPING
+**Do NOT report** routine dispatches (engineer spawned, code reviewer spawned). Those are expected pipeline activity, not news.
+
+Update `lastSummaryTime` in `PRECHECK_STATE.json`.
+
+### 6. HOUSEKEEPING
 Update `BOARD_REVIEW_STATUS.md`. Archive done tickets. Clean up sessions.
 
 **Evolver integration:** When closing a resolved ticket, record the solution as a local capsule using `capsule-record.sh`.
@@ -162,7 +174,4 @@ Scan ALL repos listed there. Run `cat framework/board-review/REPOS.conf` to get 
 
 ## Endpoints
 
-| Env | URL |
-|-----|-----|
-| Experiment | https://churncopilothendrix-bc5b56cmnopm2ixz3dvhwd.streamlit.app |
-| Production | https://churnpilot.streamlit.app |
+Find under the respective project's README.md, report if the data is missing or out-of-sync.

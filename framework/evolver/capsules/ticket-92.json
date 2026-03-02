@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "Demo mode button unresponsive — show_user_menu() was checking session_token and clearing demo_mode on rerun",
+  "summary": "Fix for: Bug: Demo Mode button unresponsive on experiment endpoint",
+  "source_ticket": "#92",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-02-25T03:12:02Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

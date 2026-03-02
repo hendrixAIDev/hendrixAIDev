@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "Rewrote importer.py to use OpenRouter as API proxy (HTTP-based, no SDK), updated health.py for OPENROUTER_API_KEY check, added fallback chain OpenRouter→Claude. 82 tests.",
+  "summary": "Fix for: Integrate OpenRouter as AI provider for spreadsheet extraction",
+  "source_ticket": "#106",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-03-01T18:45:37Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

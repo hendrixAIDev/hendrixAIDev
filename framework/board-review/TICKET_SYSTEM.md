@@ -1,7 +1,6 @@
 # Ticket System — Sub-Agent Reference
 
 **Audience:** All sub-agents.  
-**MANDATORY FIRST:** Read `PROJECT_STRUCTURE.md`.
 
 ---
 
@@ -21,11 +20,16 @@ If your work fails at any phase, set the ticket back to `status:new` and add a c
 
 ## Repos
 
-| Scope | Repo |
-|-------|------|
-| General / Framework | `hendrixAIDev/hendrixAIDev` |
-| ChurnPilot | `hendrixAIDev/churn_copilot_hendrix` |
-| StatusPulse | `hendrixAIDev/statuspulse` |
+**Source of truth:** `framework/board-review/REPOS.conf` — one repo per line.
+
+**Update issues via CLI:**
+```bash
+# Add comment
+gh issue comment 42 --repo hendrixAIDev/[repo] --body "..."
+
+# Update labels
+gh issue edit 42 --repo hendrixAIDev/[repo] --add-label "status:in-progress"
+```
 
 ---
 
@@ -38,13 +42,15 @@ status:new → status:in-progress → status:review → status:verification → 
 | Status | Meaning | Who sets it |
 |--------|---------|-------------|
 | `status:new` | Needs triage & dispatch | CTO, or any agent on failure |
-| `status:in-progress` | Engineer working | CTO (on dispatch) |
-| `status:review` | Code review needed | Engineer (when done) |
+| `status:in-progress` | Sub-agent working (any phase) | CTO (before every dispatch) |
+| `status:review` | Code review needed | Engineer (when done coding) |
 | `status:verification` | QA needed | Code reviewer (on approve) |
 | `status:cto-review` | Final approval | QA (on pass) |
 | `status:done` | Closed | CTO (on approve) |
 | `status:blocked` | Waiting on dependency | CTO (during triage) |
 | `status:needs-jj` | CEO decision required | CTO only (during triage) |
+
+**Key rule:** CTO sets `status:in-progress` BEFORE every dispatch (Phases 1, 2, 3). This prevents the precheck from seeing the ticket as actionable and double-dispatching.
 
 **Priority:** `priority:high` · `priority:medium` · `priority:low`
 
@@ -60,38 +66,56 @@ Tickets with a `### Dependencies` section listing `- [ ] #N` issue refs use GitH
 
 ---
 
-## Sub-Agent Completion Checklist
+## Sub-Agent Label Rules (MANDATORY)
 
-Before setting `status:review`:
-- [ ] All requirements implemented
-- [ ] Tests written and passing
-- [ ] Tested on local server (UI changes visible, no console errors)
-- [ ] Documentation updated if needed
-- [ ] Completion comment posted on GitHub issue
-- [ ] Label updated to `status:review`
-- [ ] Issue left **OPEN**
+**Every sub-agent MUST update the ticket label before exiting.** This is how the pipeline knows what to do next.
+
+### On Success — set the next status:
+
+| Your Role | You receive | On success, set |
+|-----------|------------|-----------------|
+| Engineer | `status:in-progress` | `status:review` |
+| Code Reviewer | `status:in-progress` | `status:verification` |
+| QA Engineer | `status:in-progress` | `status:cto-review` |
+
+### On Failure — reset to `status:new`:
+
+If your work fails, is rejected, or you cannot complete the task:
+1. Set `status:new` on the ticket
+2. Post a comment explaining what failed and why
+3. Leave the issue **OPEN**
+
+The CTO will pick it up on the next triage pass and decide what to do.
+
+### How to update labels:
+
+```bash
+# Remove old label, add new one
+gh issue edit <NUMBER> --repo <OWNER/REPO> --remove-label "status:in-progress" --add-label "status:review"
+```
+
+### Completion checklist (all roles):
+
+- [ ] Work completed (or failure documented)
+- [ ] Completion/failure comment posted on GitHub issue
+- [ ] Label updated to next status (success) or `status:new` (failure)
+- [ ] Issue left **OPEN** (only CTO closes issues)
 
 ---
 
-## QA Requirements
+## Branch & Deployment Rules
 
-QA **must** use browser automation on the deployed experiment endpoint. Code review alone is NOT sufficient.
+| Action | Who | Notes |
+|--------|-----|-------|
+| Work on local feature branch | Engineer | e.g., `fix/cp84-benefits-sync` |
+| Review code on local branch | Code Reviewer | `git diff experiment..branch-name` |
+| Review tests on local branch | QA Engineer | Before merging |
+| Merge local branch → `experiment` | QA Engineer | Only after code review + test review pass |
+| Test on experiment endpoint | QA Engineer | Browser automation, never localhost |
+| Close tickets | CTO only | After QA passes |
+| Merge `experiment` → `main` | CEO (JJ) only | Production deployment |
 
-- Review code changes, check for missing tests
-- Push to `experiment` branch if code looks good
-- Navigate real user flow on experiment endpoint → confirm fix
-- Screenshot/snapshot evidence in QA report
-- See `framework/roles/overlays/qa-overlay.md` for full standards
-
----
-
-## Deployment Authority
-
-| Action | Who |
-|--------|-----|
-| Push to `experiment` | QA (after code review) |
-| Close tickets | CTO only |
-| Merge to `main` | CEO (JJ) only |
+**Flow:** Engineer (local branch) → Code Review (local branch) → QA (review on local branch → merge to experiment → test on experiment) → CTO Review → Done
 
 ---
 

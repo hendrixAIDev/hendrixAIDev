@@ -1,31 +1,9 @@
 # Shared Overlay - All Roles
 
-**Purpose:** Common context for ALL role-based sub-agents (Hendrix/JJ specifics)
+**Purpose:** Common context for ALL role-based sub-agents
 
-**Last Updated:** 2026-02-14
+**Last Updated:** 2026-03-01
 
----
-
-## Strategic Context: BUILD & SERVE Phase
-
-**Current Phase:** BUILD & SERVE (no monetization until legal clearance)
-
-**Critical Constraint:** Protect JJ's H1B visa status above all else.
-- ❌ NO payment processing
-- ❌ NO revenue generation (crypto, tips, donations)
-- ✅ Free tier features only
-- ✅ Organic growth OK
-- ✅ User accounts OK (no payments)
-
-**Success metrics:**
-- Users served (not revenue)
-- User retention
-- Product quality
-- Feature velocity
-
-**Phase ends when:** JJ confirms legal situation has changed.
-
----
 
 ## Tech Stack
 
@@ -38,7 +16,6 @@
 
 **Supabase Constraints:**
 - Use pooler (port 6543) not direct (port 5432)
-- Free tier = 2 emails/hour rate limit
 - Connection: `postgresql://user:pass@host:6543/postgres`
 
 **Streamlit Constraints:**
@@ -46,21 +23,22 @@
 - Use `st.query_params` for persistence
 - `streamlit_js_eval` won't persist across loads
 
+**Streamlit Browser Testing (agent-browser):**
+- **⚠️ CRITICAL — Always use `/~/+/` path:** `agent-browser open https://app.streamlit.app/~/+/` NOT the bare domain. The root URL loads a Streamlit Cloud wrapper with a cross-origin iframe — `snapshot` returns only 2 elements. `/~/+/` goes straight to the app and gives full accessibility tree access. Using the bare domain is a silent failure.
+- **⚠️ Sleeping apps — 303 redirect to auth is NOT an auth issue:** Streamlit Cloud free tier hibernates apps after ~7 days of no traffic. When sleeping, ALL requests (including `/_stcore/health`) return HTTP 303 → `share.streamlit.io/-/auth/app`. This looks like auth but is actually a sleep redirect. Fix: navigate to the app URL with `agent-browser`, look for a "Wake app" button in the snapshot, click it, then wait 30–60s for boot before testing. If it persists, reboot the app from Streamlit Cloud dashboard.
+- **Auth:** Use `agent-browser auth login churnpilot-qa` (credentials pre-saved on host). No need to fill login forms manually.
+- **Session isolation:** Set `export AGENT_BROWSER_SESSION=agent1` once at the top of your script — all subsequent commands inherit it automatically.
+- **Cleanup:** Always `agent-browser close` when done — instant, no hanging processes.
+
 ---
 
 ## Active Projects
 
-| Project | Status | Location |
-|---------|--------|----------|
-| **ChurnPilot** | 🟢 Live | `projects/churn_copilot/` |
-| **StatusPulse** | 🟡 Dev | `projects/statuspulse/` |
-| **SaaS Dashboard** | 🟢 Live | `projects/streamlit_templates/` |
-
----
+See `framework/PROJECTS.md`
 
 ## File Organization & Documentation
 
-**MANDATORY:** Follow `PROJECT_STRUCTURE.md` and `DOCUMENTATION.md`
+**MANDATORY:** Follow `PROJECT_STRUCTURE.md`
 
 **Key rules:**
 - Project files in `projects/[project]/`
@@ -77,6 +55,7 @@
 - General: https://github.com/hendrixAIDev/hendrixAIDev
 - ChurnPilot: https://github.com/hendrixAIDev/churn_copilot_hendrix
 - StatusPulse: https://github.com/hendrixAIDev/statuspulse
+- CharacterLifeSim: https://github.com/hendrixAIDev/character-life-sim
 
 **Update issues via CLI:**
 ```bash
@@ -128,43 +107,18 @@ gh issue edit 42 --repo hendrixAIDev/[repo] --add-label "status:in-progress"
 Depending on your role, you may have:
 - `exec` - Run shell commands
 - `read/write/edit` - File operations
-- `browser` - Web automation
 - `web_search/web_fetch` - Research
 - `gh` CLI - GitHub operations
+- `grep` - general search
 
-## Code Intelligence (MANDATORY for coding tasks)
+## Available Skills
 
-Before modifying any codebase, understand it first using these two tools:
+These skills are installed in the workspace. Read the SKILL.md file (just the header) when you need one:
 
-### Code Search (FTS5)
-```bash
-SKILL="$HOME/.openclaw/workspace/skills/code-index/scripts"
-
-# Index the project (first time — takes ~10s, creates .code-index.db)
-$SKILL/code-index.sh /path/to/project
-
-# Search before coding — understand what exists
-$SKILL/code-search.sh "authentication" /path/to/project
-$SKILL/code-search.sh "name:get_user" /path/to/project --type function
-
-# After making changes — keep index fresh
-$SKILL/code-update.sh /path/to/project
-```
-Output: JSON lines with `filepath`, `name`, `chunk_type`, `line_start`, `line_end`, `docstring`, `code_snippet`, `bm25_score`.
-
-### Dependency Graph
-```bash
-TOOLS="$HOME/.openclaw/workspace/framework/tools"
-
-# Generate full dependency graph for a project
-python3 $TOOLS/generate_dependency_graph.py --root /path/to/project --summary --no-file
-
-# Find all callers of a specific function (impact analysis)
-python3 $TOOLS/generate_dependency_graph.py --root /path/to/project --find function_name --no-file
-```
-Use `--find` before renaming/removing any function to check what would break.
-
-**Why:** Code search tells you *what exists*. Dependency graph tells you *what depends on what*. Use both before making changes.
+- **agent-browser** (`skills/agent-browser/SKILL.md`): Browser automation CLI for AI agents — navigating pages, filling forms, clicking buttons, taking screenshots, testing web apps.
+- **code-nav** (`skills/code-nav/SKILL.md`): Python code navigation — goto-definition, find-references, list-names using jedi. Use BEFORE modifying code to understand call chains and impact.
+- **gh-screenshot** (`skills/gh-screenshot/SKILL.md`): Upload screenshots to GitHub issue comments as inline images.
+- **online-search** (`skills/perplexity/SKILL.md`): Perplexity online search.
 
 ---
 

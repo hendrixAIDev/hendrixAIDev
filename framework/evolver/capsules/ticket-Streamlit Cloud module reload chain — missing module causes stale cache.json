@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "--problem",
+  "summary": "Fix for: Issue #Streamlit Cloud module reload chain — missing module causes stale cache",
+  "source_ticket": "#Streamlit Cloud module reload chain — missing module causes stale cache",
+  "source_repo": "--title",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-02-25T01:32:24Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}
