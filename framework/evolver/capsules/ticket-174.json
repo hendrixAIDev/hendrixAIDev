@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "Direct experiment verification passed after Streamlit reboot restored the deployed 3-step signup flow; duplicate-email preflight and embedded payment step both validated on SHA d7cd520.",
+  "summary": "Fix for: CP-181 - 3-Step Registration with Payment Collection",
+  "source_ticket": "#174",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-04-03T15:42:23Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

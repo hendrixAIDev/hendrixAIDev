@@ -310,7 +310,7 @@ Write Code → Unit Tests → Local Server Test → Mark QA-Ready
    streamlit run src/ui/app.py
    ```
 
-2. **Open in browser:** `http://localhost:8501`
+2. **Open in browser:** `http://localhost:8501` (do NOT append `/~/+/` — that's for Streamlit Cloud only)
 
 3. **Login with test account:**
    - Email: `automation@churnpilot.test`
@@ -325,7 +325,7 @@ Write Code → Unit Tests → Local Server Test → Mark QA-Ready
 5. **Document local testing in ticket:**
    ```markdown
    **Local Testing:**
-   - ✅ Tested on local server (http://localhost:8501)
+   - ✅ Tested on local server (for example: http://localhost:8501)
    - ✅ Logged in with automation@churnpilot.test
    - ✅ Verified toggle button visible in top-left corner
    - ✅ Tested toggle functionality (hide/show sidebar)
@@ -333,15 +333,28 @@ Write Code → Unit Tests → Local Server Test → Mark QA-Ready
    - ✅ No console errors
    ```
 
-**📚 Full guide:** See `projects/churn_copilot/app/docs/LOCAL_TESTING_GUIDE.md`
+6. **Post the engineer handoff checklist before marking `status:review`:**
+   ```markdown
+   **Engineer handoff checklist:**
+   - [x] Synced/rebased from latest `origin/experiment`
+   - [x] Tested locally on `http://localhost:8511` (or any localhost port actually used)
+   - [x] Verified: <feature / bugfix description>
+   - [x] Tested edge case(s): <notes>
+   - [x] Relevant tests passed: <unit / integration / e2e>
+   - [x] Ready for code review
+   ```
+
+**📚 Full guide:** See `projects/churn_copilot/docs/LOCAL_TESTING_GUIDE.md`
 
 **Real example of what NOT to do:**
 - ❌ "Unit tests pass, should work" (didn't run actual app)
 - ❌ Result: QA found toggle button completely missing from page
 - ❌ Wasted: QA cycle, CTO review time, re-assignment to frontend engineer
 
-**Before marking QA_REVIEW:**
+**Before marking review-ready:**
 
+- [ ] **⛔ Rebased onto `origin/experiment`** (`git fetch origin && git rebase origin/experiment`)
+- [ ] **Diff is clean** — `git diff origin/experiment --stat` shows ONLY your ticket's files
 - [ ] Tests written for your changes (unit or integration)
 - [ ] Tests pass locally: `make test-unit`
 - [ ] Existing tests still pass (no regressions)
@@ -352,6 +365,13 @@ Write Code → Unit Tests → Local Server Test → Mark QA-Ready
 - QA Engineer tests on `experiment` endpoint (deployed environment)
 - QA validates your implementation meets acceptance criteria
 - This is the proper division of labor: **you test locally, QA tests deployed**
+
+**⛔ Missing handoff proof is a review failure:**
+If the ticket comment does not explicitly confirm both:
+- synced/rebased from latest `origin/experiment`, and
+- local verification on `http://localhost:<port>` (any localhost port is acceptable)
+
+then the code reviewer should reject the handoff immediately and set the ticket back to `status:new` with a note that the engineer handoff gate was not met.
 
 **QA Engineers MUST verify fixes on the deployed experiment endpoint, NOT localhost.**
 
@@ -370,6 +390,19 @@ Write Code → Unit Tests → Local Server Test → Mark QA-Ready
 > _Added per CEO directive (Feb 19, 2026) — Issue #69 was closed as "fixed" based on localhost testing only, but the fix did not work on the experiment endpoint._
 
 **If you can't test locally, explain why in the ticket and flag for CTO assistance.**
+
+**Suggested reviewer rejection text for missing engineer handoff gate:**
+```markdown
+❌ Review rejected: engineer handoff incomplete.
+
+Before code review, the engineer must post a handoff comment confirming:
+- branch synced/rebased from latest `origin/experiment`
+- local verification completed on `http://localhost:<port>` (any localhost port is acceptable)
+- what was tested
+- relevant tests passed
+
+This ticket is being reset to `status:new` so an engineer can complete the required pre-review validation.
+```
 
 ---
 
@@ -500,6 +533,16 @@ Set `status:review` to trigger the next phase. **Stay on your local feature bran
 
 **Steps:**
 ```bash
+# 0. ⛔ REBASE onto current experiment (MANDATORY before handoff)
+#    This prevents stale-branch rejections at code review.
+cd /tmp/wt/<branch>
+git fetch origin
+git rebase origin/experiment
+# If conflicts: resolve them (you understand your own code best), then:
+#   git add <resolved-files> && git rebase --continue
+# Verify your diff is clean (only your ticket's files):
+git diff origin/experiment --stat
+
 # 1. Set status:review (triggers CTO to dispatch code reviewer)
 gh issue edit <number> --repo hendrixAIDev/<repo> \
   --remove-label "status:in-progress" \

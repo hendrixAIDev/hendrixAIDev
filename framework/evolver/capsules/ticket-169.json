@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "Narrow the ticket contract to the honest non-browser verification scope, then land a Stripe test harness with env-gated real checkout/portal checks, signed handler-level webhook verification, and explicit artifact-identification + DB-reset boundaries.",
+  "summary": "Fix for: Add real Stripe integration test harness and experiment billing verification",
+  "source_ticket": "#169",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-03-27T21:55:14Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

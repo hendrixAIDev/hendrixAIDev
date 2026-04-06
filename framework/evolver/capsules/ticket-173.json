@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "Trial tracking schema foundation: add nullable users columns for trial dates and payment-method references with idempotent Supabase + local migration coverage.",
+  "summary": "Fix for: CP-180 - Database Schema for Trial Tracking",
+  "source_ticket": "#173",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-03-30T03:37:10Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

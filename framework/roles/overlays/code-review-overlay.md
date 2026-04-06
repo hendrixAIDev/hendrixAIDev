@@ -21,7 +21,25 @@ On rejection: describe exactly what needs to change. **Do NOT remove the worktre
 
 ## Review Gates (run in order — exit early on any failure)
 
-### GATE 0 — Scope check (before lint, before reading code)
+### GATE 0a — Rebase onto latest experiment (before anything else)
+
+```bash
+git fetch origin experiment
+git rebase origin/experiment
+```
+
+This ensures the diff only contains the ticket's own changes, not unrelated work from other tickets that landed on experiment in parallel. If the rebase has conflicts, resolve them (the ticket's changes take priority). If conflicts are too complex, reject with a note asking the engineer to rebase manually.
+
+### GATE 0b — Acceptance Test cross-check (if ticket has them)
+
+If the ticket body contains an `## Acceptance Tests` section:
+1. List the test names specified in the ticket
+2. Verify each one exists in the diff (search test file names/function names)
+3. If any acceptance test is missing, weakened, or skipped → **IMMEDIATE REJECT** with a note listing which tests are missing
+
+This ensures TDD discipline — the engineer must implement what was specified, not a subset.
+
+### GATE 0c — Scope check (before lint, before reading code)
 
 ```bash
 git diff origin/experiment..HEAD --stat

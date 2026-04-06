@@ -1,0 +1,1 @@
+{"repo":"zrjaa1/openclaw-assistant","issue":20,"signal":"PowerShell JSON array quoting fails for tools.deny config","solution":"Use escaped double-quotes inside single quotes for PowerShell. Provide platform-specific command variants in docs.","tags":["powershell","quoting","docs","windows"],"timestamp":"2026-03-14T04:22:00Z"}

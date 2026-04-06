@@ -8,10 +8,10 @@
 
 | File | Stage | Who writes | When |
 |------|-------|-----------|------|
-| `review-quality.jsonl` | Code Review | CTO (Phase 4, on ticket closure) | Ongoing |
-| `engineer-quality.jsonl` | Engineering | CTO (Phase 4, on ticket closure) | Planned |
-| `qa-quality.jsonl` | QA Verification | CTO (Phase 4, on ticket closure) | Planned |
-| `triage-quality.jsonl` | CTO Triage | Darwin Loop (weekly retro) | Planned |
+| `review-quality.jsonl` | Code Review | CTO (Phase 4, on ticket closure) | ✅ Active (48 records) |
+| `engineer-quality.jsonl` | Engineering | CTO (Phase 4, on ticket closure) | ✅ Active |
+| `qa-quality.jsonl` | QA Verification | CTO (Phase 4, on ticket closure) | ✅ Active |
+| `triage-quality.jsonl` | CTO Triage | CTO (Phase 4, on ticket closure) | ✅ Active |
 
 ## How Labels Are Generated
 
@@ -34,8 +34,15 @@
 
 See `schemas/metrics-schema.md` for detailed field specs per stage.
 
+## Shared Knowledge
+
+| File | Purpose |
+|------|---------|
+| `framework/knowledge/streamlit-gotchas.md` | Compiled Streamlit pitfalls from EvoMap capsules. Referenced by fullstack + frontend overlays. |
+
 ## Usage
 
-- **Darwin Loop:** Reads metrics weekly to identify systemic issues
-- **DSPy (future):** Training data for prompt optimization
+- **CTO Board Review:** Writes all 4 JSONL files during Phase 4 (ticket closure)
+- **DSPy Shadow Mode:** Training data for prompt optimization (50+ examples per stage enables compilation)
 - **Manual review:** JJ/CTO can audit pipeline health
+- **Trend analysis:** Score averages over time show whether prompt changes improve quality

@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "Configured Stripe subscriptions to start in a 30-day `trialing` state, added trial-specific webhook/status handling, and verified live experiment checkout copy shows honest “30 days free” semantics before billing begins.",
+  "summary": "Fix for: CP-182 - Stripe Subscription with Trial Configuration",
+  "source_ticket": "#175",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-03-30T04:29:55Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

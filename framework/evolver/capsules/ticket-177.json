@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "Implemented trial notification reminders with required 3-day/day-of copy, preserved active-trial Pro access and downgrade banners, then aligned the expanded 6-column trial schema/idempotency coverage so QA could merge cleanly.",
+  "summary": "Fix for: CP-184 - Trial Notifications & Feature Gating",
+  "source_ticket": "#177",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-04-03T17:53:19Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

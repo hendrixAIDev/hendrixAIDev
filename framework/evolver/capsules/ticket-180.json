@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "Removed Anthropic/Claude runtime paths from ChurnPilot, standardized extraction/importer/health on OpenRouter only, added explicit acceptance tests for the OpenRouter-only contract, and verified the merged experiment deployment on SHA 83c6021.",
+  "summary": "Fix for: Refactor ChurnPilot AI usage to OpenRouter-only and remove Anthropic/Claude paths",
+  "source_ticket": "#180",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-04-03T20:14:09Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

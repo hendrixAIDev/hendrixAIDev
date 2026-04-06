@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "For Streamlit Cloud billing smoke, treat /_stcore/health 303 as diagnostic only when /~/+/ is reachable; verify the real authenticated /~/+/?page=billing path with seeded test users for unpaid, paid-visible, and refund-visible states instead of synthetic ?s= session URLs.",
+  "summary": "Fix for: Add experiment billing smoke and journey automation for Stripe flows",
+  "source_ticket": "#170",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-03-29T00:24:38Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

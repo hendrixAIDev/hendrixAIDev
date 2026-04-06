@@ -6,65 +6,15 @@
 
 ## 🚨 Streamlit-Specific Knowledge (CRITICAL)
 
-### Execution Model
-- Streamlit re-runs the **entire script** on every interaction (button click, input change, rerun)
-- State persists ONLY via `st.session_state` — local variables reset every run
-- Guard expensive operations with `@st.cache_resource` or `@st.cache_data`
+**📚 READ `framework/knowledge/streamlit-gotchas.md` FIRST.** It contains 15 production-incident patterns compiled from our own failures. Key sections:
+- Session state lifecycle (tickets #64, #65, #70)
+- Button & rerun patterns (tickets #67, #92)
+- Module reload chain — TOP BUG SOURCE (tickets #66, #71, #78, #83, #88, #104)
+- Tabs & fragments (tickets #56, #71)
+- Thread safety & globals (tickets #77, #80)
+- CSS, persistence, caching, deployment, database
 
-### Module Reload Chain (Top Bug Source)
-- Streamlit Cloud hot-reloads modules, but **not all of them** unless explicitly listed
-- `_RELOAD_MODULES` in `app.py` controls which modules get reloaded
-- **If you add a new `src/core/` module or change imports, add it to `_RELOAD_MODULES`**
-- Past incidents: #66, #71, #78, #88, #104 — ALL caused by missing reload chain entries
-- Symptom: "works locally, fails on Cloud" or Pydantic validation errors after deploy
-
-### Session State Patterns
-```python
-# ✅ Defensive access (always)
-value = st.session_state.get("key", default)
-
-# ❌ Direct access (crashes on first run)
-value = st.session_state["key"]
-
-# ✅ Initialize early, check often
-if "initialized" not in st.session_state:
-    st.session_state.initialized = True
-    st.session_state.page = "home"
-```
-
-### Navigation & Page State
-```python
-# ✅ Use query params for page persistence (survives reload)
-st.query_params["page"] = "dashboard"
-
-# ❌ Cookies — sandboxed iframe, can't write
-# ❌ localStorage — iframe-scoped, won't persist across loads
-# ❌ st.session_state alone — lost on page refresh
-```
-
-### Callbacks & Buttons
-```python
-# ✅ on_click with callback (processes before rerun)
-st.button("Save", on_click=save_handler, args=(data,))
-
-# ❌ if st.button() then do_work() — work runs AFTER rerun starts
-# This causes "click → page disappears → need to click again" bugs
-# Past incidents: #98, #105, #108
-```
-
-### Caching Rules
-```python
-# ✅ @st.cache_resource — for DB connections, Pydantic models, non-serializable objects
-# ✅ @st.cache_data — for serializable data (DataFrames, dicts, lists)
-# ❌ @st.cache_data with Pydantic models — fails silently or causes stale class issues
-```
-
-### Deployment (Streamlit Cloud)
-- Free tier hibernates apps after ~7 days of no traffic
-- Sleeping apps return HTTP 303 → `share.streamlit.io/-/auth/app` (NOT an auth error)
-- Always test on experiment endpoint, not localhost
-- Use `/~/+/` path for browser automation (bypasses cross-origin iframe wrapper)
-- Environment secrets set in Streamlit Cloud dashboard, not `.env` files
+**If you skip this doc, you WILL hit one of these bugs. Every pattern is from a real production incident.**
 
 ---
 
@@ -85,6 +35,23 @@ Do NOT remove the worktree — code reviewer and QA reuse it.
 
 ---
 
+## 🧪 Test-Driven Development (MANDATORY)
+
+**If the ticket has an `## Acceptance Tests` section, you MUST write those tests FIRST.**
+
+```
+Step 1: Write test stubs from the ticket's Acceptance Tests → run them → confirm they FAIL (RED)
+Step 2: Implement the feature/fix until all acceptance tests PASS (GREEN)
+Step 3: Add any additional edge-case tests you discover during implementation
+Step 4: Commit tests + implementation together
+```
+
+**Why:** Tests define the requirement. Writing them first ensures you build what was specified, not what you assumed. The code reviewer will cross-check your tests against the ticket spec — missing or weakened tests are a rejection reason.
+
+**If the ticket has NO Acceptance Tests section:** Write tests alongside implementation as before, but still aim for test-first where feasible.
+
+---
+
 ## 🚨 Pre-Submission Scope Check & Linting
 
 Same gate as backend-architect — see `backend-architect-overlay.md`.
@@ -100,16 +67,41 @@ git diff origin/experiment..HEAD --name-only | grep '\.py$' | xargs -r ruff chec
 
 ---
 
-## Common Streamlit Bugs & Fixes
+---
 
-| Symptom | Root Cause | Fix |
-|---------|-----------|-----|
-| "Works locally, fails on Cloud" | Missing module in `_RELOAD_MODULES` | Add to reload chain in `app.py` |
-| Click button → page disappears | Using `if st.button()` instead of `on_click` | Switch to callback pattern |
-| Data lost on page refresh | Using only `st.session_state` | Add `st.query_params` persistence |
-| Pydantic validation error after deploy | Stale class from module cache | Add to `_RELOAD_MODULES` + dict roundtrip |
-| "Duplicate widget ID" error | Same `key=` used in conditional branches | Make keys unique per branch |
-| Slow page load | Missing `@st.cache_resource` on DB calls | Add caching decorator |
+## 🔍 Code Investigation (10 min max)
+
+**Use tools, not manual file reading:**
+
+```bash
+# Keyword search
+rg -n "error pattern" src/ --glob='*.py'
+
+# Code navigation — read skills/code-nav/SKILL.md for full usage
+bash skills/code-nav/scripts/code-nav.sh refs src/core/db_storage.py 494 8    # who calls this?
+bash skills/code-nav/scripts/code-nav.sh goto src/core/db_storage.py 531 18   # follow a symbol
+bash skills/code-nav/scripts/code-nav.sh names src/ --type class              # list all classes
+```
+
+**Rules:**
+- Search first, read targeted sections only. Do NOT read entire files.
+- If you've investigated for >10 minutes without writing code, STOP.
+
+---
+
+## ⛔ Local DB Verification (REQUIRED)
+
+**You MUST verify your changes against a running local server with DB before marking review-ready.**
+
+Unit tests alone are NOT sufficient — if your change touches UI or user-facing behavior, you must see it work in the running app.
+
+**Steps:**
+1. Start local server: `cd projects/churn_copilot && streamlit run src/ui/app.py`
+2. Log in with test account (see CONVENTIONS.md → Local Testing section → `projects/churn_copilot/docs/LOCAL_TESTING_GUIDE.md`)
+3. Verify the feature works end-to-end in the browser
+4. Capture screenshot evidence with `agent-browser`
+
+**Skipping this gate is a rejection reason at code review.**
 
 ---
 

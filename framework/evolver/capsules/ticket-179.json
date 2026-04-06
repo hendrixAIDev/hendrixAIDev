@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "Delivered honest end-to-end trial-flow coverage for CP-185 by fixing billing-page lifecycle sequencing, executing the env-gated acceptance suite against real Stripe test-mode flows, hardening the Stripe test harness, and verifying the merged experiment deployment on SHA 0c41172.",
+  "summary": "Fix for: CP-185: End-to-End Test Suite for Trial Flow",
+  "source_ticket": "#179",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-04-05T02:55:48Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

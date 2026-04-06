@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "Aligned ChurnPilot launch-readiness for trial-to-paid by fixing legal-page app routes, unifying trial messaging across auth/billing/docs/demo copy, adding the launch verification evidence scaffold, and verifying the merged experiment deployment on SHA c1e2f12.",
+  "summary": "Fix for: Align ChurnPilot for trial-to-paid public launch readiness",
+  "source_ticket": "#181",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-04-05T04:55:38Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

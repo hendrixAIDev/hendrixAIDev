@@ -24,7 +24,7 @@
 - `streamlit_js_eval` won't persist across loads
 
 **Streamlit Browser Testing (agent-browser):**
-- **⚠️ CRITICAL — Always use `/~/+/` path:** `agent-browser open https://app.streamlit.app/~/+/` NOT the bare domain. The root URL loads a Streamlit Cloud wrapper with a cross-origin iframe — `snapshot` returns only 2 elements. `/~/+/` goes straight to the app and gives full accessibility tree access. Using the bare domain is a silent failure.
+- **⚠️ CRITICAL — `/~/+/` path for Streamlit Cloud only:** `agent-browser open https://app.streamlit.app/~/+/` — NOT the bare domain. The root URL loads a Streamlit Cloud wrapper with a cross-origin iframe — `snapshot` returns only 2 elements. `/~/+/` goes straight to the app. **For localhost, do NOT use `/~/+/`** — just `http://localhost:8501` (there's no iframe wrapper locally).
 - **⚠️ Sleeping apps — 303 redirect to auth is NOT an auth issue:** Streamlit Cloud free tier hibernates apps after ~7 days of no traffic. When sleeping, ALL requests (including `/_stcore/health`) return HTTP 303 → `share.streamlit.io/-/auth/app`. This looks like auth but is actually a sleep redirect. Fix: navigate to the app URL with `agent-browser`, look for a "Wake app" button in the snapshot, click it, then wait 30–60s for boot before testing. If it persists, reboot the app from Streamlit Cloud dashboard.
 - **Auth:** Use `agent-browser auth login churnpilot-qa` (credentials pre-saved on host). No need to fill login forms manually.
 - **Session isolation:** Set `export AGENT_BROWSER_SESSION=agent1` once at the top of your script — all subsequent commands inherit it automatically.

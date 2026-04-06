@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "Tabs hidden on 0-card accounts due to fullscreen bypass in app.py",
+  "summary": "Fix for: Other tabs hidden when navigating to Add Card on 0-card account",
+  "source_ticket": "#140",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-03-07T20:50:23Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

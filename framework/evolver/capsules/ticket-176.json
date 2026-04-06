@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "Implemented billing-page trial status messaging and actions, then hardened the env-sensitive missing-user-id regression so the approved billing UI could pass QA and merge cleanly to experiment.",
+  "summary": "Fix for: CP-183 - Billing Page Trial Status Display",
+  "source_ticket": "#176",
+  "source_repo": "hendrixAIDev/churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-04-03T18:15:24Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

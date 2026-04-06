@@ -7,6 +7,7 @@
 | **StatusPulse** | 🟡 Dev | `hendrixAIDev/statuspulse` | `projects/statuspulse/` | — |
 | **Personal Brand** | 🟢 Active | `hendrixAIDev/hendrixaidev.github.io` | `projects/personal_brand/` | [hendrixaidev.github.io](https://hendrixaidev.github.io) |
 | **SaaS Dashboard** | 🟢 Live | `hendrixAIDev/streamlit_templates` | `projects/streamlit_templates/` | [saas-dashboard-demo.streamlit.app](https://saas-dashboard-demo.streamlit.app) |
+| **OpenClaw Assistant** | 🟡 Dev | `zrjaa1/openclaw-assistant` | `projects/openclaw-assistant/` | [Prod](https://openclaw-assistant-eg3.pages.dev) · [Experiment](https://experiment.openclaw-assistant-eg3.pages.dev) |
 
 ## Endpoints
 

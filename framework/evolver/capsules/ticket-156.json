@@ -1,0 +1,15 @@
+{
+  "type": "Capsule",
+  "signals": [],
+  "solution": "Streamlit expander state not persisting after rerun",
+  "summary": "Fix for: Issue #156",
+  "source_ticket": "#156",
+  "source_repo": "churn_copilot_hendrix",
+  "confidence": 0.8,
+  "success_streak": 1,
+  "created": "2026-03-09T17:27:43Z",
+  "blast_radius": {
+    "files": 1,
+    "lines": 10
+  }
+}

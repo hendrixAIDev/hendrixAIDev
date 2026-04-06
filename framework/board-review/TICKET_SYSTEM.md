@@ -107,15 +107,55 @@ gh issue edit <NUMBER> --repo <OWNER/REPO> --remove-label "status:in-progress" -
 
 | Action | Who | Notes |
 |--------|-----|-------|
-| Work on local feature branch | Engineer | e.g., `fix/cp84-benefits-sync` |
-| Review code on local branch | Code Reviewer | `git diff experiment..branch-name` |
-| Review tests on local branch | QA Engineer | Before merging |
-| Merge local branch → `experiment` | QA Engineer | Only after code review + test review pass |
+| Work in isolated worktree | Engineer | `/tmp/wt/{repo-short}-{ticket-num}`, branch `fix/{repo-short}-{ticket-num}` |
+| Review code in worktree | Code Reviewer | `git diff origin/experiment..HEAD` inside the worktree |
+| Review tests in worktree | QA Engineer | Before merging |
+| Merge worktree branch → `experiment` | QA Engineer | Only after code review + test review pass |
 | Test on experiment endpoint | QA Engineer | Browser automation, never localhost |
+| Clean up worktree | QA Engineer | `git worktree remove /tmp/wt/{name} --force` after successful merge |
 | Close tickets | CTO only | After QA passes |
 | Merge `experiment` → `main` | CEO (JJ) only | Production deployment |
 
-**Flow:** Engineer (local branch) → Code Review (local branch) → QA (review on local branch → merge to experiment → test on experiment) → CTO Review → Done
+**Flow:** Engineer (worktree at `/tmp/wt/`) → Code Review (same worktree) → QA (review in worktree → merge to experiment → test on experiment → remove worktree) → CTO Review → Done
+
+---
+
+## Engineer Handoff Gate (MANDATORY)
+
+Before an engineer sets `status:review`, the ticket comment must explicitly include:
+
+- confirmation the branch was synced/rebased from latest `origin/experiment`
+- confirmation the fix was tested locally on `http://localhost:<port>` (any localhost port is acceptable)
+- short note on what was verified
+- relevant tests that passed
+
+**Required template:**
+
+```markdown
+**Engineer handoff checklist:**
+- [x] Synced/rebased from latest `origin/experiment`
+- [x] Tested locally on `http://localhost:8511` (or any localhost port actually used)
+- [x] Verified: <feature / bugfix description>
+- [x] Tested edge case(s): <notes>
+- [x] Relevant tests passed: <unit / integration / e2e>
+- [x] Ready for code review
+```
+
+If this handoff comment is missing, incomplete, or does not mention both sync-from-`experiment` and localhost verification, the code reviewer should reject the ticket back to `status:new` immediately instead of doing a full review.
+
+**Suggested rejection comment:**
+
+```markdown
+❌ Review rejected: engineer handoff incomplete.
+
+Before code review, the engineer must post a handoff comment confirming:
+- branch synced/rebased from latest `origin/experiment`
+- local verification completed on `http://localhost:<port>` (any localhost port is acceptable)
+- what was tested
+- relevant tests passed
+
+Resetting to `status:new` so an engineer can complete the required pre-review validation.
+```
 
 ---
 

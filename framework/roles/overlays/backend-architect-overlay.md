@@ -18,6 +18,23 @@ cd "$WT_PATH"
 
 ---
 
+## 🧪 Test-Driven Development (MANDATORY)
+
+**If the ticket has an `## Acceptance Tests` section, you MUST write those tests FIRST.**
+
+```
+Step 1: Write test stubs from the ticket's Acceptance Tests → run them → confirm they FAIL (RED)
+Step 2: Implement the feature/fix until all acceptance tests PASS (GREEN)
+Step 3: Add any additional edge-case tests you discover during implementation
+Step 4: Commit tests + implementation together
+```
+
+**Why:** Tests define the requirement. Writing them first ensures you build what was specified, not what you assumed. The code reviewer will cross-check your tests against the ticket spec — missing or weakened tests are a rejection reason.
+
+**If the ticket has NO Acceptance Tests section:** Write tests alongside implementation as before, but still aim for test-first where feasible.
+
+---
+
 ## 🚨 Pre-Submission Gates
 
 **Run these before marking `status:review`. Details in CONVENTIONS.md.**
@@ -66,6 +83,24 @@ bash skills/code-nav/scripts/code-nav.sh names src/ --type class              # 
 
 ---
 
+## ⛔ Local DB Verification (REQUIRED)
+
+**You MUST verify your changes against a running local server with DB before marking review-ready.**
+
+Unit tests alone are NOT sufficient — if your change touches UI, database queries, or user-facing behavior, you must see it work in the running app.
+
+**Steps:**
+1. Start local server: `cd projects/churn_copilot && streamlit run src/ui/app.py`
+2. Log in with test account (see `docs/LOCAL_TESTING_GUIDE.md` or CONVENTIONS.md)
+3. Verify the feature works end-to-end in the browser
+4. Capture screenshot evidence (see below)
+
+**📚 Full local testing guide:** See CONVENTIONS.md → Local Testing section → `projects/churn_copilot/docs/LOCAL_TESTING_GUIDE.md`
+
+**Skipping this gate is a rejection reason at code review.**
+
+---
+
 ## 🔍 Local Verification with Browser
 
 After local server testing, use `agent-browser` to capture evidence:
@@ -73,7 +108,7 @@ After local server testing, use `agent-browser` to capture evidence:
 ```bash
 # Read skills/agent-browser/SKILL.md for full usage
 export AGENT_BROWSER_SESSION=agent1
-agent-browser open http://localhost:8501/~/+/
+agent-browser open http://localhost:8501
 agent-browser auth login churnpilot-qa
 sleep 4
 agent-browser snapshot --compact

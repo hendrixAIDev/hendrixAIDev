@@ -194,7 +194,7 @@ Your goal is to build robust, scalable systems that serve users well while prote
 
 **When in doubt:** If the bug manifests in the UI (button doesn't work, page disappears, state lost) → `frontend-engineer`. If it's data/logic behind the scenes → `backend-architect`.
 
-**Escalation rule:** If a ticket was NOT closed in the first dispatch round, re-dispatch with `--model opus --thinking medium`.
+**Escalation rule:** If a ticket was NOT closed in the first dispatch round, re-dispatch with `--model openai-codex/gpt-5.4 --thinking medium`.
 
 ---
 

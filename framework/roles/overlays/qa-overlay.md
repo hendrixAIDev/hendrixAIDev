@@ -10,8 +10,23 @@
    WT_PATH="/tmp/wt/${REPO_SHORT}-<TICKET_NUM>"
    cd "$WT_PATH"
    ```
-2. Review code changes (`git diff origin/experiment..HEAD`) and run tests (`pytest`)
-3. If code + tests look good, **merge from the main project directory:**
+2. **Rebase onto latest experiment** before doing anything else:
+   ```bash
+   git fetch origin experiment
+   git rebase origin/experiment
+   ```
+   This ensures the branch is up-to-date and the merge to experiment will be clean. If the rebase has conflicts, resolve them (the ticket's changes take priority).
+3. Review code changes (`git diff origin/experiment..HEAD`) and run tests (`pytest`)
+4. **Post-merge regression check:** After merging to experiment, verify no prior ticket work was reverted. Quick check:
+   ```bash
+   # List recently closed tickets to know what should be preserved
+   gh issue list --repo <OWNER/REPO> --state closed --limit 5 --json number,title --jq '.[] | "#\(.number): \(.title)"'
+   # Scan the merge diff for removed code from those tickets
+   git diff HEAD~1..HEAD -- src/ | grep -c "^-.*ref #"
+   ```
+   If the merge removed code tagged with a recent ticket ref (e.g., `ref #120`), flag it as a potential regression — do NOT mark it as intentional removal without verifying.
+
+4. If code + tests look good, **merge from the main project directory:**
    ```bash
    BRANCH=$(git branch --show-current)
    MAIN_DIR="$(git worktree list | head -1 | awk '{print $1}')"
@@ -20,15 +35,46 @@
    git merge "$BRANCH" --no-edit
    git push origin experiment
    ```
-4. Test on the **experiment endpoint** using `agent-browser` CLI (never localhost, never the `browser` tool)
-5. Upload screenshot evidence to the GitHub issue using `skills/gh-screenshot`
-6. Only set `status:cto-review` after experiment endpoint testing passes
-7. Clean up worktree:
+5. **Verify deployment before testing** (see Deployment Verification below)
+6. Test on the **experiment endpoint** using `agent-browser` CLI (never localhost, never the `browser` tool)
+6. Upload screenshot evidence to the GitHub issue using `skills/gh-screenshot`
+7. Only set `status:cto-review` after experiment endpoint testing passes
+8. Clean up worktree:
    ```bash
    git worktree remove "$WT_PATH" --force
    git branch -d "$BRANCH" 2>/dev/null || true
    ```
    On FAIL: also clean up worktree, then set `status:new`.
+
+---
+
+## Deployment Verification (MANDATORY before browser testing)
+
+After pushing to experiment, you MUST confirm the new code is live before browser testing.
+
+```bash
+# 1. Get the commit SHA you just pushed
+EXPECTED_SHA=$(git rev-parse --short HEAD)
+
+# 2. Wait 60 seconds for initial deployment
+sleep 60
+
+# 3. Check the health endpoint for deployed SHA
+agent-browser open <ENDPOINT>/~/+/?health=capabilities
+agent-browser snapshot --compact 2>&1 | grep git_sha
+
+# 4. Compare: does the deployed SHA match your push?
+# If yes → proceed to browser testing
+# If no → wait 30s and retry (max 3 retries)
+```
+
+**If SHA doesn't match after 3 retries (total ~2.5 min wait):**
+1. Try rebooting via Streamlit Cloud dashboard (share.streamlit.io)
+2. If reboot fails or SHA still doesn't match: **FAIL the ticket** with reason `deployment_timeout`
+3. Set `status:new` so the pipeline re-dispatches
+4. **Do NOT proceed to browser testing on old code** — you will waste time testing behavior the fix hasn't changed yet
+
+**If the health endpoint doesn't have `git_sha` field:** Fall back to one behavioral test. If it shows old behavior, wait 60s and retry ONE more time. If still old behavior, FAIL with `deployment_timeout`. Do not retry more than twice.
 
 ---
 
@@ -38,7 +84,7 @@
 
 ```bash
 export AGENT_BROWSER_SESSION=agent1
-agent-browser open <ENDPOINT>/~/+/   # ALWAYS use /~/+/ for Streamlit
+agent-browser open <ENDPOINT>/~/+/   # /~/+/ for Streamlit Cloud ONLY; for localhost use http://localhost:8501
 agent-browser snapshot --compact     # accessibility tree + ref IDs
 agent-browser click --ref <ref>
 agent-browser type --ref <ref> --text "value"
