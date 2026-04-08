@@ -36,21 +36,21 @@ gh issue edit 42 --repo hendrixAIDev/[repo] --add-label "status:in-progress"
 ## Status Flow
 
 ```
-status:new → status:in-progress → status:review → status:verification → status:cto-review → status:done (CLOSED)
+status:new → status:in-progress → status:new → ... → status:done (CLOSED)
 ```
 
 | Status | Meaning | Who sets it |
 |--------|---------|-------------|
-| `status:new` | Needs triage & dispatch | CTO, or any agent on failure |
-| `status:in-progress` | Sub-agent working (any phase) | CTO (before every dispatch) |
-| `status:review` | Code review needed | Engineer (when done coding) |
-| `status:verification` | QA needed | Code reviewer (on approve) |
-| `status:cto-review` | Final approval | QA (on pass) |
-| `status:done` | Closed | CTO (on approve) |
-| `status:blocked` | Waiting on dependency | CTO (during triage) |
-| `status:needs-jj` | CEO decision required | CTO only (during triage) |
+| `status:new` | Needs CTO triage / next-step decision | CTO, or sub-agent when its pass ends |
+| `status:in-progress` | Sub-agent working | CTO before dispatch |
+| `status:review` | Review needed | Optional, CTO-controlled |
+| `status:verification` | Validation needed | Optional, CTO-controlled |
+| `status:cto-review` | Final CTO check | Optional, CTO-controlled |
+| `status:done` | Closed | CTO only |
+| `status:blocked` | Waiting on dependency | CTO only |
+| `status:needs-jj` | CEO decision required | CTO only |
 
-**Key rule:** CTO sets `status:in-progress` BEFORE every dispatch (Phases 1, 2, 3). This prevents the precheck from seeing the ticket as actionable and double-dispatching.
+**Key rule:** CTO sets `status:in-progress` before dispatch so precheck does not double-wake while work is active. When the sub-agent finishes, it normally returns the ticket to `status:new` so CTO can decide the next step.
 
 **Priority:** `priority:high` · `priority:medium` · `priority:low`
 
@@ -68,61 +68,70 @@ Tickets with a `### Dependencies` section listing `- [ ] #N` issue refs use GitH
 
 ## Sub-Agent Label Rules (MANDATORY)
 
-**Every sub-agent MUST update the ticket label before exiting.** This is how the pipeline knows what to do next.
+**Every sub-agent MUST update the ticket label before exiting.**
 
-### On Success — set the next status:
+### Default success rule
 
-| Your Role | You receive | On success, set |
-|-----------|------------|-----------------|
-| Engineer | `status:in-progress` | `status:review` |
-| Code Reviewer | `status:in-progress` | `status:verification` |
-| QA Engineer | `status:in-progress` | `status:cto-review` |
+When your work pass is complete:
+1. Set the ticket to `status:new`
+2. Post a comment with:
+   - what you did
+   - what result you got
+   - what validation you performed, if any
+   - what you recommend as the next step
+3. Leave the issue **OPEN**
 
-### On Failure — reset to `status:new`:
+This wakes CTO back up to decide the next move.
+
+### Failure rule
 
 If your work fails, is rejected, or you cannot complete the task:
 1. Set `status:new` on the ticket
 2. Post a comment explaining what failed and why
 3. Leave the issue **OPEN**
 
-The CTO will pick it up on the next triage pass and decide what to do.
+### Exception rule
+
+Only set a more specific status such as `status:review`, `status:verification`, or `status:cto-review` if the CTO explicitly instructed you to do that in the dispatch note.
 
 ### How to update labels:
 
 ```bash
 # Remove old label, add new one
-gh issue edit <NUMBER> --repo <OWNER/REPO> --remove-label "status:in-progress" --add-label "status:review"
+gh issue edit <NUMBER> --repo <OWNER/REPO> --remove-label "status:in-progress" --add-label "status:new"
 ```
 
 ### Completion checklist (all roles):
 
 - [ ] Work completed (or failure documented)
 - [ ] Completion/failure comment posted on GitHub issue
-- [ ] Label updated to next status (success) or `status:new` (failure)
+- [ ] Label updated before exit
 - [ ] Issue left **OPEN** (only CTO closes issues)
 
 ---
 
 ## Branch & Deployment Rules
 
+These rules apply when the chosen next step involves implementation work.
+
 | Action | Who | Notes |
 |--------|-----|-------|
 | Work in isolated worktree | Engineer | `/tmp/wt/{repo-short}-{ticket-num}`, branch `fix/{repo-short}-{ticket-num}` |
-| Review code in worktree | Code Reviewer | `git diff origin/experiment..HEAD` inside the worktree |
-| Review tests in worktree | QA Engineer | Before merging |
-| Merge worktree branch → `experiment` | QA Engineer | Only after code review + test review pass |
-| Test on experiment endpoint | QA Engineer | Browser automation, never localhost |
-| Clean up worktree | QA Engineer | `git worktree remove /tmp/wt/{name} --force` after successful merge |
-| Close tickets | CTO only | After QA passes |
+| Review code in worktree | Reviewer if CTO requests review | `git diff origin/experiment..HEAD` inside the worktree |
+| Run verification in worktree or deployed env | Validation role chosen by CTO | Match the validation plan |
+| Merge worktree branch → `experiment` | Validation role chosen by CTO | Only if that validation pass is authorized to merge |
+| Test on experiment endpoint | Validation role chosen by CTO | Browser automation, never localhost, when deployed verification is required |
+| Clean up worktree | Validation role that finishes the deployed pass | `git worktree remove /tmp/wt/{name} --force` when done |
+| Close tickets | CTO only | Only after required validation evidence exists |
 | Merge `experiment` → `main` | CEO (JJ) only | Production deployment |
 
-**Flow:** Engineer (worktree at `/tmp/wt/`) → Code Review (same worktree) → QA (review in worktree → merge to experiment → test on experiment → remove worktree) → CTO Review → Done
+There is no universal required implementation pipeline. CTO chooses the next step. These worktree and deployment rules apply only when the chosen workflow needs them.
 
 ---
 
 ## Engineer Handoff Gate (MANDATORY)
 
-Before an engineer sets `status:review`, the ticket comment must explicitly include:
+Before an engineer returns a ticket to CTO, the ticket comment must explicitly include:
 
 - confirmation the branch was synced/rebased from latest `origin/experiment`
 - confirmation the fix was tested locally on `http://localhost:<port>` (any localhost port is acceptable)
@@ -141,7 +150,7 @@ Before an engineer sets `status:review`, the ticket comment must explicitly incl
 - [x] Ready for code review
 ```
 
-If this handoff comment is missing, incomplete, or does not mention both sync-from-`experiment` and localhost verification, the code reviewer should reject the ticket back to `status:new` immediately instead of doing a full review.
+If this handoff comment is missing, incomplete, or does not mention both sync-from-`experiment` and localhost verification, the next CTO pass should treat the handoff as incomplete and send it back for correction instead of advancing.
 
 **Suggested rejection comment:**
 
@@ -158,6 +167,12 @@ Resetting to `status:new` so an engineer can complete the required pre-review va
 ```
 
 ---
+
+## Closing Rule
+
+Sub-agents never close tickets.
+
+Before CTO closes a ticket, the ticket must contain the validation evidence CTO decided was required for that ticket.
 
 ## PRECHECK_STATE.json — Hands Off
 

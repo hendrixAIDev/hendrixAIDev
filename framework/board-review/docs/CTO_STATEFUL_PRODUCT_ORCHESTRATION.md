@@ -104,7 +104,17 @@ Examples:
 - StatusPulse CTO
 - Personal Brand CTO
 
-A CTO session is still triggered by precheck and can still be short-lived, but it now operates against a *persistent product context*.
+In OpenClaw terms, each product CTO should exist as a **dedicated persistent named automation session**, not the main session and not an isolated one-shot session.
+
+Examples:
+
+- `session:cto-churnpilot`
+- `session:cto-statuspulse`
+- `session:cto-personal-brand`
+
+The role definition stays shared and cached, while product-specific state is loaded from durable artifacts.
+
+Each wake still behaves like a short pass: load state, act, delegate, exit. But the session identity remains stable per product, which gives the system a clean operational thread without mixing CTO automation into the main human-facing session.
 
 That CTO is responsible for:
 
@@ -118,13 +128,15 @@ That CTO is responsible for:
 
 “Stateful CTO” does *not* mean:
 
-- one immortal chat thread that must stay alive forever
+- the main session becomes the CTO control loop
+- one immortal process sits around waiting for sub-agents
 - hidden reasoning only available inside one runtime session
 
 It means:
 
-- there is durable product state that survives sessions
-- any fresh CTO run can reconstruct context from artifacts
+- each product has a stable CTO session identity in OpenClaw
+- durable product state survives independently of chat context
+- after compaction or wakeup, the CTO rehydrates from artifacts
 - decisions are visible and auditable
 
 ---
@@ -306,7 +318,16 @@ framework/board-review/state/churn_copilot.json
 framework/board-review/state/statuspulse.json
 ```
 
-This file can track:
+The exact format does **not** have to be JSON. JSON is a reasonable default, but the CTO should be allowed to choose the artifact format that best preserves compact, recoverable operational state for that product.
+
+The requirement is not “must be JSON.” The requirement is:
+
+- durable
+- inspectable
+- easy to reload after context compaction
+- easy for future CTO runs to update safely
+
+This artifact can track:
 
 - current operating mode for the product
 - active workflow policies
@@ -437,6 +458,8 @@ Start with *Option A*.
 
 Keep the existing labels first and change CTO routing behavior before changing the public label vocabulary. That reduces migration risk.
 
+Review decision: `status:review` and `status:verification` remain generic for now.
+
 ---
 
 ## Responsibilities by Role
@@ -446,7 +469,10 @@ Keep the existing labels first and change CTO routing behavior before changing t
 The product CTO should:
 
 - own one product context
+- make strategic product decisions within CTO authority
+- do planning and orchestration, not hands-on implementation
 - choose workflow templates
+- decide what kind of work is actually needed before dispatching anyone
 - define ticket validation plans
 - decide next actions on `status:new`
 - decide whether a result needs durable documentation
@@ -536,35 +562,180 @@ That is the point: *same product CTO, different ticket workflows, one consistent
 
 This should be done incrementally.
 
-### Phase 1 — Add design/docs only
+The important constraint is: we are changing both the **operating model** and the **session model**. We should not rewrite everything at once.
 
-- add this design note
-- review and refine terminology
-- identify which current assumptions in `BOARD_REVIEW.md` are too rigid
+The safest order is:
 
-### Phase 2 — Introduce workflow templates
+1. define the target architecture clearly
+2. define stable per-product session identities
+3. define the state artifacts those sessions reload
+4. update the CTO operating docs
+5. change precheck wake behavior
+6. then evolve workflow routing and label semantics
 
-- define 4-6 canonical workflow documents
-- keep existing labels
-- update CTO docs so triage selects a workflow template instead of auto-defaulting to engineer
+### Phase 1 — Define product-to-session mapping
 
-### Phase 3 — Add per-product state files
+Goal: decide exactly how CTO exists in OpenClaw before changing runtime behavior.
 
-- create `framework/board-review/state/[product].json`
-- keep them minimal
-- define exactly what is allowed there
+Deliverables:
 
-### Phase 4 — Update dispatch logic
+- define one persistent named CTO session per product
+- define the canonical session keys, for example:
+  - `session:cto-churnpilot`
+  - `session:cto-statuspulse`
+  - `session:cto-personal-brand`
+- define which repo(s) and project path map to each CTO session
+- define where product state for each session lives
+- document this mapping in `framework/board-review/BOARD_REVIEW.md`
 
-- route based on workflow template + ticket type
-- make validation mode explicit per ticket
-- stop assuming QA is mandatory in all cases
+Rules:
 
-### Phase 5 — Revisit labels
+- CTO does not run in the main session
+- CTO is not a separate persona like Hendrix/Clawra by default
+- CTO is a dedicated automation session construct
+- one product, one CTO session identity
 
-- only after workflow routing works well
-- decide whether broader labels are sufficient or whether more explicit labels are warranted
+Why first:
 
+Without this mapping, we cannot correctly redesign precheck or write reliable state-loading rules.
+
+### Phase 2 — Define per-product state artifacts
+
+Goal: make product continuity explicit and reloadable.
+
+Deliverables:
+
+- define the state artifact location per product
+- define the minimum safe contents
+- define update rules for the CTO
+- define compaction recovery rules
+
+Phase 2 decisions:
+
+- canonical namespace: `framework/board-review/state/<product>.*`
+- each product CTO reloads its state on every wake
+- after context compaction, CTO re-reads state before acting
+- state is for compact cross-run operational context only
+- state must not duplicate GitHub ticket history or become a long-form journal
+- durable product knowledge should be promoted into project docs/plans instead of staying in state
+- we define the minimum shared contract now
+- each product CTO defines the actual per-product contents later
+
+Requirements:
+
+- durable
+- inspectable
+- compact
+- safe to reload every wake
+- format-flexible, not hardcoded to JSON unless that proves best
+
+Open question to resolve later if needed:
+
+- whether all products should use the same artifact format for consistency, even though the architecture does not require JSON specifically
+
+### Phase 3 — Update CTO operating docs
+
+Goal: make the written operating model match the new architecture before changing automation.
+
+Deliverables:
+
+- update `BOARD_REVIEW.md`
+- update `CTO_PROMPT.md`
+- update any related dispatch guidance
+
+Required changes:
+
+- CTO is explicitly responsible for strategy, planning, and orchestration
+- CTO delegates, does not implement
+- CTO does not wait for sub-agents
+- CTO must reload product state + project `README.md` after compaction and on each wake
+- `status:new` becomes a planning entry point, not an automatic engineer-dispatch synonym
+- validation is chosen explicitly by workflow, not assumed to always be QA
+
+Why before automation:
+
+The docs should define the contract before precheck and runtime behavior are changed.
+
+### Phase 4 — Change wake model from isolated jobs to named product CTO sessions
+
+Goal: move from today's isolated one-shot cron-created CTO runs to persistent per-product CTO session targets.
+
+Current behavior:
+
+- precheck creates an isolated one-shot CTO cron job
+- the job runs once and disappears
+
+Target behavior:
+
+- precheck identifies which product has work
+- precheck wakes the matching named CTO session for that product
+- that session processes one pass and exits
+- later work wakes the same product CTO session again
+
+Deliverables:
+
+- update precheck trigger logic
+- update any job/session routing assumptions
+- preserve watchdog behavior for stale WIP resets
+- preserve cooldown / anti-spam protections
+
+Success criteria:
+
+- no work is routed to the main session
+- no product wakes the wrong CTO session
+- the same product always resumes in the same named CTO session
+
+### Phase 5 — Introduce workflow templates into live routing
+
+Goal: replace the fixed engineer-first assumption with controlled workflow selection.
+
+Deliverables:
+
+- define all workflow templates from day 1:
+  - feature implementation
+  - bugfix
+  - product analysis
+  - UX / design
+  - trust / risk / policy
+  - content / launch
+- teach CTO triage to select a workflow template
+- make dispatch routing depend on ticket type and workflow, not only current label
+
+Constraints:
+
+- keep existing generic labels for now
+- avoid ad-hoc routing chaos by restricting triage to known workflow families
+
+### Phase 6 — Revisit labels and validation semantics
+
+Goal: decide whether the generic labels remain sufficient once workflow routing is real.
+
+Review questions:
+
+- are `status:review` and `status:verification` still clear enough?
+- do we need explicit analysis/design/policy labels later?
+- are validation expectations clear across non-engineering workflows?
+
+Default decision for now:
+
+- keep generic labels unless real usage proves they are too overloaded
+
+### Phase 7 — Harden and simplify
+
+Goal: clean up transitional logic after the new model is working.
+
+Potential cleanup items:
+
+- remove assumptions in old docs that still describe the fixed pipeline as universal
+- simplify precheck once product-session routing is stable
+- standardize state artifact format if useful
+- add reporting/views that summarize product CTO state cleanly across sessions
+
+## Recommended immediate next step
+
+Start with **Phase 1: define product-to-session mapping**.
+
+That is the smallest meaningful implementation step and it unlocks everything else cleanly.
 ---
 
 ## What should change in current docs
@@ -582,6 +753,10 @@ Toward:
 - product-state loading rules
 - validation selection rules
 - dispatch policy by workflow type
+- explicit session lifecycle rules (delegate, exit, let precheck wake the next pass)
+- rules for operating inside persistent named per-product CTO sessions
+
+This should become the primary operational guide once the stateful product orchestration model is adopted, while this document remains the architecture/design note.
 
 ### `TICKET_SYSTEM.md`
 
@@ -592,7 +767,7 @@ Should change from:
 Toward:
 
 - generic status semantics
-- role-specific handoff rules by workflow
+- clear sub-agent handoff rules
 - clear definition of who may set which labels in which contexts
 
 ### `BOARD_REVIEW_STATUS.md`
@@ -623,9 +798,9 @@ But should not be the only place where product continuity lives.
 
 **Mitigation:** keep sub-agents stateless and parallelizable; only centralize routing and strategic decisions.
 
-### Risk 5: Validation quality drops when QA is optional
+### Risk 5: Validation quality drops when workflow flexibility increases
 
-**Mitigation:** require an explicit validation plan per ticket, chosen by CTO and visible in the dispatch note.
+**Mitigation:** require explicit validation before closure, chosen by CTO and visible in the dispatch note.
 
 ---
 
@@ -638,9 +813,11 @@ Specifically:
 1. treat the CTO as the *stateful strategic orchestrator for one product*
 2. keep sub-agents *stateless and isolated*
 3. redefine `status:new` as *CTO planning required*, not *engineer dispatch required*
-4. introduce *workflow templates* as the main abstraction
+4. introduce *workflow templates* as references, not a rigid router
 5. make *validation explicit and context-dependent* instead of assuming QA is always mandatory
-6. store state in *recoverable artifacts*, not hidden session memory
+6. enforce active status handoff while sub-agents are working
+7. require CTO to instruct sub-agents which status to set when they finish
+8. store state in *recoverable artifacts*, not hidden session memory
 
 That gives us a system that is:
 
@@ -652,23 +829,88 @@ That gives us a system that is:
 
 ---
 
-## Open Questions for Review
+## Review Decisions
 
-1. Should each product have its own CTO prompt/doc, or one shared CTO doc with product-specific state files?
-2. Should `status:review` and `status:verification` remain generic, or do we want richer labels later?
-3. What is the minimum safe schema for `framework/board-review/state/[product].json`?
-4. Which workflow templates are required on day one versus later?
-5. Should product analysis be allowed to create new tickets directly, or only recommend them for CTO review?
-6. How much of the current retry-limit logic should remain global versus workflow-specific?
+1. **Shared CTO doc + product-specific state artifacts**
+   - Keep one shared CTO role/prompt/doc.
+   - Product-specific state lives in per-product artifacts loaded by that shared role.
+   - Product CTOs should exist as dedicated persistent named OpenClaw sessions, one per product.
+
+2. **Keep generic review labels for now**
+   - `status:review` and `status:verification` remain generic in v1.
+   - Richer labels can be added later only if generic semantics become too overloaded.
+
+3. **State artifact format stays flexible**
+   - Do not hard-require JSON.
+   - Provide general rules for durable, inspectable, compact state instead.
+
+4. **All workflow templates available from day 1**
+   - Feature implementation
+   - Bugfix
+   - Product analysis
+   - UX / design
+   - Trust / risk / policy
+   - Content / launch
+
+5. **Product analysis may create tickets directly**
+   - Analysis is allowed to open new tickets directly when that is the correct output.
+   - The CTO still owns overall orchestration afterward.
+
+6. **Retry-limit logic remains global**
+   - Keep retry/anti-loop protection at the global Board Review policy layer for now.
 
 ---
+
+## Wake / Resume Model
+
+The CTO does not wait for sub-agent completion.
+
+Correct behavior:
+
+1. the product CTO session wakes
+2. CTO loads current product state + relevant project README/docs
+3. CTO classifies tickets and delegates work
+4. CTO records any state updates needed for continuity
+5. CTO exits immediately
+6. precheck detects fresh issue activity or actionable labels and wakes that same product CTO session again
+
+How wakeup happens now:
+
+- `skills/board-review-precheck/scripts/precheck.sh` runs every minute via OS cron / launchd
+- it scans for actionable ticket states and broader issue activity
+- today, it creates a fresh isolated one-shot CTO cron job from `framework/board-review/CTO_PROMPT.md`
+- `watchdog.sh` resets stale WIP tickets back to `status:new` after inactivity, which also feeds the next CTO cycle
+
+Target architecture after this redesign:
+
+- precheck should stop creating isolated one-shot CTO sessions
+- instead, it should target a persistent named session per product, for example `session:cto-churnpilot`
+- each wake should enqueue one new agent turn into that product CTO session
+- the CTO still exits after each pass, persistence is at the session identity layer, not the process layer
+
+This means continuity comes from artifacts plus stable per-product session identity, not from the CTO session staying alive waiting for work.
+
+## Context Compaction Rule
+
+After any context compaction, the CTO must re-read:
+
+1. the current product state artifact
+2. the project `README.md`
+3. any workflow template or planning doc directly relevant to the active tickets
+
+The system should assume compaction happens. Reloading state is part of normal operation, not an exception path.
+
+This is one reason persistent named product CTO sessions are preferable to main-session routing: compaction becomes a normal recoverable event inside a dedicated operational thread.
 
 ## Proposed Next Step
 
 If this direction looks right, the next concrete implementation step should be:
 
 1. define the workflow template documents
-2. define the per-product state-file schema
-3. rewrite `BOARD_REVIEW.md` triage so `status:new` means *classify + choose workflow + choose next role*
+2. define the per-product state artifact rules
+3. define the product-to-session mapping for persistent CTO sessions
+4. rewrite `BOARD_REVIEW.md` triage so `status:new` means *classify + choose workflow + choose next role*
+5. update `CTO_PROMPT.md` so every CTO wake reloads product state + project README before acting
+6. update precheck so it targets named per-product CTO sessions instead of isolated one-shot CTO jobs
 
-That would change the system at the right abstraction layer without forcing a risky full rewrite first.
+That lets us migrate step-by-step without forcing a risky full rewrite first.

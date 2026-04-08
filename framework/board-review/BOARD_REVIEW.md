@@ -1,25 +1,30 @@
 # Board Review — CTO Execution Guide
 
-**Audience:** CTO cron session only.  
+**Audience:** Product CTO automation sessions.  
 **Model:** `openai-codex/gpt-5.4` (thinking: medium)
 
 ---
 
 ## Load Context (MANDATORY)
 
-You're an isolated session. Load these first:
+You're operating inside a product CTO session. Load these first:
 
 1. `MEMORY.md`, `SOUL.md`, `USER.md`, `AGENTS.md`, `PROJECT_STRUCTURE.md`
 2. `memory/YYYY-MM-DD.md` (today + yesterday)
 3. `framework/board-review/BOARD_REVIEW_STATUS.md`
 4. `framework/board-review/TICKET_SYSTEM.md`
 5. `framework/roles/CONVENTIONS.md`
+6. For each product you act on, load the current product state artifact and that project's `README.md`
+
+If context was compacted, re-load the product state artifact and project `README.md` before making new dispatch decisions. Outside compaction, prefer reusing persistent session context and reload heavyweight product docs only when needed.
 
 ---
 
 ## Key Principles
 
+- The CTO is responsible for strategic decisions and planning within CTO authority
 - Coordinate, don't code — delegate to sub-agents
+- The CTO decides what kind of work is needed, which workflow applies, and what validation is required
 - **ALWAYS dispatch immediately** — never hold for "business hours"
 - Slack target: `C0ABYMAUV3M` (#jj-hendrix) — never #jj-clawra
 - Include ticket links in all reports
@@ -27,7 +32,7 @@ You're an isolated session. Load these first:
 
 ## ⛔ Session Lifecycle — Process & Exit
 
-**CTO sessions are stateless.** Process what's available NOW, then exit. Do NOT wait for sub-agents to finish.
+**CTO runtime is short-lived, but session identity is persistent per product.** Process what's available NOW, then exit. Do NOT wait for sub-agents to finish.
 
 **Correct flow:**
 1. Run all 6 phases against current ticket states
@@ -36,9 +41,9 @@ You're an isolated session. Load these first:
 4. **EXIT immediately**
 
 **What happens next (without you):**
-- Sub-agents auto-announce on completion and update labels
-- Precheck detects label changes → triggers a **new** CTO session
-- New session picks up where you left off (e.g., code review → QA → close)
+- Sub-agents update labels and ticket state
+- Precheck detects label changes or issue activity and wakes the matching product CTO session again
+- The same product CTO session picks up the next pass (for example code review → QA → close)
 
 **WRONG:** Staying alive waiting for sub-agents to return, then processing their results in the same session. This burns tokens and duplicates the precheck→trigger loop.
 
@@ -46,34 +51,70 @@ You're an isolated session. Load these first:
 
 **RIGHT:** Dispatch, report, exit. Let the automation cycle handle continuity. If a sub-agent truly failed (crashed, timed out, exited without work), the ticket will remain `status:in-progress` with no label change. The precheck's stale-ticket detection (>45 min no activity) will reset it to `status:new` for the next CTO cycle. That is the ONLY mechanism for detecting engineer failure — not CTO judgment calls minutes after dispatch.
 
+**Wake path:** `skills/board-review-precheck/scripts/precheck.sh` runs every minute via OS cron / launchd. It now routes repo activity to the matching product CTO session and wakes that CTO directly with `openclaw agent --session-id ...`, reusing the same persistent session each time. `watchdog.sh` handles stale WIP resets back to `status:new`.
+
+**Prompt model:** bootstrap heavy context once per product CTO session. On normal wakes, rely on persistent session context plus the product state artifact. Reload heavyweight files mainly after context compaction, or when a ticket needs fresh product/docs context.
+
+## Product CTO Sessions
+
+These are the persistent product CTO sessions currently bound for board review automation:
+
+| Product | Session key | Session id | Repos |
+|---|---|---|---|
+| ChurnPilot | `agent:main:cto-churnpilot` | `46dfba9a-c319-41b9-b226-393a7ea10d1a` | `hendrixAIDev/churn_copilot_hendrix` |
+| StatusPulse | `agent:main:cto-statuspulse` | `1b90c3d8-1497-40ad-be99-3a75d46a8635` | `hendrixAIDev/statuspulse` |
+| Personal Brand | `agent:main:cto-personal-brand` | `77713b76-a090-49ae-abf4-1240e9980787` | `hendrixAIDev/hendrixAIDev`, `hendrixAIDev/hendrixaidev.github.io` |
+| OpenClaw Assistant | `agent:main:cto-openclaw-assistant` | `b367f243-2b76-4eaf-8e1a-4799ddc4f776` | `zrjaa1/openclaw-assistant` |
+| CLSE | `agent:main:cto-clse` | `a1c3afc0-fdcf-4271-9a15-ae0f7bedcca2` | `hendrixAIDev/character-life-sim` |
+
+If any session id ever changes, update this table and the mapping inside `skills/board-review-precheck/scripts/precheck.sh` together.
+
 ---
 
 ## Status Flow
 
 ```
-status:new → status:in-progress → status:review → status:verification → status:cto-review → status:done (CLOSED)
+status:new → status:in-progress → status:new → ... → status:done (CLOSED)
 ```
 
 | Status | Meaning | Who acts |
 |--------|---------|----------|
-| `status:new` | Needs triage + dispatch | CTO (Phase 1) |
-| `status:in-progress` | Sub-agent working | Sub-agent |
-| `status:review` | Code review needed | CTO dispatches reviewer (Phase 2) |
-| `status:verification` | QA needed | CTO dispatches QA (Phase 3) |
-| `status:cto-review` | Final approval | CTO (Phase 4) |
+| `status:new` | Needs CTO triage / next-step decision | CTO |
+| `status:in-progress` | A dispatched work pass is active | Sub-agent / in-flight work |
+| `status:review` | Review step requested | CTO-controlled |
+| `status:verification` | Validation step requested | CTO-controlled |
+| `status:cto-review` | Final CTO check requested | CTO-controlled |
 | `status:done` | Closed | — |
-| `status:blocked` | Waiting on dependency | CTO re-checks in Phase 1 |
-| `status:needs-jj` | CEO decision required | CEO (only set by CTO in Phase 1) |
+| `status:blocked` | Waiting on dependency | CTO |
+| `status:needs-jj` | CEO decision required | CTO / CEO |
 
 ### Failure Rule
 
-**Any failure at any phase → `status:new`.** Code review rejected? Back to `status:new`. QA failed? Back to `status:new`. CTO rejected? Back to `status:new`. The agent sets `status:new` and adds a comment explaining what failed. The next CTO triage picks it up, reads the history, and re-dispatches an **engineer** to address the feedback.
+**Any failed or completed work pass returns to `status:new` unless CTO explicitly asked for a different next status.** The agent sets `status:new` and adds a comment explaining the result. The next CTO triage decides what happens next.
 
-**⛔ CRITICAL:** `status:new` ALWAYS means "dispatch an engineer." Never short-circuit by dispatching a reviewer or QA agent directly from triage. The status flow is linear: engineer → CR → QA → CTO review. When any phase rejects, it resets to engineer. The CTO must not skip steps or re-run the same phase on unchanged code.
+For implementation work, do not send unchanged work back through the same review or validation step. Return it to CTO for re-triage.
 
 `status:needs-jj` is ONLY set by the CTO during Phase 1 triage, when a genuine CEO decision is required (pricing, legal, strategic pivots). Working phases never set `status:needs-jj`.
 
 ---
+
+## Workflow Templates
+
+Use these workflow templates as references during triage:
+
+- `framework/board-review/workflows/feature-implementation.md`
+- `framework/board-review/workflows/bugfix.md`
+- `framework/board-review/workflows/product-analysis.md`
+- `framework/board-review/workflows/ux-design.md`
+- `framework/board-review/workflows/trust-risk.md`
+- `framework/board-review/workflows/content-launch.md`
+
+These are examples, not a rigid router. The CTO should use judgment to choose the best next step.
+
+Enforced rules:
+- validation must be explicit before closure
+- move the ticket out of `status:new` while a sub-agent is working
+- keep existing generic labels for now
 
 ## 6-Phase Workflow
 
@@ -84,16 +125,17 @@ status:new → status:in-progress → status:review → status:verification → 
 
 For each `status:new` ticket:
 1. Read the ticket body and comment history (check for retry context)
-2. **Acceptance Tests check:** If the ticket lacks an `## Acceptance Tests` section and is a feature or bug ticket, add one before dispatching. Define 3-5 named test cases that capture the expected behavior. This is the TDD spec — engineers write these tests first.
-3. **⛔ 3-ROUND LIMIT:** Count how many completed engineer rounds this ticket has been through. A "round" is a full cycle where the ticket went through engineer dispatch and came back to `status:new` due to failure at ANY stage — engineer produced no work, code review rejected, QA failed, or CTO review rejected. All of these count as failed rounds. If the ticket has already completed 3 full engineer rounds (i.e., round count > 3), do NOT dispatch again — set `status:needs-jj` with a comment summarizing all attempts and why they failed. This prevents dead loops that waste tokens.
-3. Run evolver capsule match (see below)
-4. Check dependencies
-5. Classify and add a dispatch comment that includes:
+2. Choose the best next step using CTO judgment, with workflow templates as reference only
+3. **Acceptance Tests check:** If the ticket is implementation-oriented and lacks an `## Acceptance Tests` section, add one before dispatching. Define 3-5 named test cases that capture the expected behavior.
+4. **⛔ 3-ROUND LIMIT:** Count how many completed engineer rounds this ticket has been through. A "round" is a full cycle where the ticket went through engineer dispatch and came back to `status:new` due to failure at ANY stage — engineer produced no work, code review rejected, QA failed, or CTO review rejected. All of these count as failed rounds. If the ticket has already completed 3 full engineer rounds (i.e., round count > 3), do NOT dispatch again — set `status:needs-jj` with a comment summarizing all attempts and why they failed. This prevents dead loops that waste tokens.
+5. Run evolver capsule match (see below)
+6. Check dependencies
+7. Classify and add a dispatch comment that includes:
    - Role being dispatched (e.g., Backend Engineer, Fullstack Engineer, Frontend Engineer, QA Engineer)
-   - Model and thinking level (e.g., `Model: Opus, Thinking: Medium`)
+   - Model and thinking level (e.g., `Model: gpt-5.4, Thinking: Medium`)
    - Brief description of the task
-   - Example: `Dispatching: Fullstack Engineer (Model: Opus, Thinking: Low) to implement shared render_quota_banner() helper and unify both sections.`
-   - For engineering tickets touching UI, API, database queries, or user-facing behavior, explicitly require the engineer handoff checklist in the ticket comment before `status:review`:
+   - Example: `Dispatching: Fullstack Engineer (Model: gpt-5.4, Thinking: Low) to implement shared render_quota_banner() helper and unify both sections.`
+   - For engineering tickets touching UI, API, database queries, or user-facing behavior, explicitly require the engineer handoff checklist in the ticket comment before returning the ticket for CTO re-triage:
      - synced/rebased from latest `origin/experiment`
      - tested locally on `http://localhost:<port>` (any localhost port is acceptable)
      - brief note on what was verified
@@ -104,8 +146,8 @@ For each `status:new` ticket:
    - **Backend Engineer** (`backend-architect`) — Pure backend work: CLI tools, API logic, database migrations, test infrastructure, non-UI projects (character-life-sim).
    - **Frontend Engineer** (`frontend-engineer`) — Pure frontend work where no backend changes are needed (CSS-only fixes, static layout changes, pure styling). Rare in Streamlit projects.
    - **Content Engineer** (`content-engineer`) — Marketing content: blog posts, product articles, Reddit/social launch posts, SEO content, documentation updates, README rewrites. Use for any ticket that produces written content rather than code. Has its own overlay with product context and legal constraints (BUILD & SERVE phase).
-6. Set `status:in-progress` and spawn the engineer sub-agent
-7. **Move on immediately.** Do NOT check if the sub-agent started working. Do NOT verify branch creation. Do NOT re-dispatch in the same session. The precheck stale-ticket detector handles failures automatically.
+8. Set the ticket to an active working status, usually `status:in-progress`, before dispatching so precheck does not wake the CTO again while the sub-agent is working
+9. **Move on immediately.** Do NOT check if the sub-agent started working. Do NOT verify branch creation. Do NOT re-dispatch in the same session. The precheck stale-ticket detector handles failures automatically.
 
 **Worktree rules for engineers:** Engineers work in an **isolated git worktree** at `/tmp/wt/{repo-short}-{ticket-num}` on branch `fix/{repo-short}-{ticket-num}` (e.g., `/tmp/wt/churn-84` on `fix/churn-84`). They do NOT push to `experiment`. The experiment branch is only touched by QA after code review passes. Code reviewers and QA reuse the same worktree — engineers must NOT remove it.
 
@@ -141,7 +183,28 @@ bash skills/dispatch-agent/scripts/dispatch.sh \
   --message "<task prompt with all context>"
 ```
 
-Options: `--model <alias>` (default: sonnet), `--thinking <level>` (default: medium), `--timeout <sec>` (default: 1200), `--delay <duration>` (default: 1m).
+Options: `--model <alias>` (default: `openai-codex/gpt-5.4`), `--thinking <level>` (default: `medium`), `--timeout <sec>` (default: 1200), `--delay <duration>` (default: 1m).
+
+**Thinking-level policy (CTO-controlled):**
+- The dispatch default is `thinking=medium`, but the CTO should override it deliberately.
+- Choose thinking based on role, workflow stage, task complexity, and retry count.
+
+Recommended defaults:
+- *Content Engineer* — `low` for straightforward drafting, `medium` for nuanced positioning/trust copy
+- *Frontend Engineer* — `low` for narrow UI/copy tweaks, `medium` for stateful Streamlit flows
+- *Backend Engineer / Fullstack Engineer* — `medium` by default, `high` for schema/auth/billing/refactor work
+- *Code Reviewer* — `medium` by default, `high` for risky/refactor/security-sensitive changes
+- *QA Engineer* — `low` for straightforward verification, `medium` for complex multi-step journeys or flaky/retry-prone flows
+
+Adjustment rules:
+- *Simple / first-attempt / tightly scoped* → prefer `low`
+- *Normal engineering or review work* → prefer `medium`
+- *High-risk, cross-cutting, ambiguous, or architecture-heavy work* → use `high`
+- *Second or third engineer round on the same ticket* → usually bump one level higher unless the retry scope is intentionally narrower
+- *Repeated failures caused by drift, ambiguity, or poor judgment* → increase thinking and narrow the prompt at the same time
+- Do *not* increase thinking automatically for every retry if the correct fix is a smaller, tighter pass
+
+CTO comments should explicitly state the chosen model and thinking level so the ticket history explains why that level was used.
 
 **Why not `sessions_spawn`?** It announces back to your session, which re-activates you and prevents clean exit. `dispatch.sh` creates fully isolated one-shot cron jobs — no callbacks, no state leakage.
 
@@ -151,27 +214,27 @@ Every spawn prompt includes:
 - Role-specific overlay: `framework/roles/overlays/{role-slug}-overlay.md` (if exists)
 - Conventions: `framework/roles/CONVENTIONS.md`
 - Required first reads: `PROJECT_STRUCTURE.md`, `TICKET_SYSTEM.md`
-- **Explicit instruction to update ticket label when done** (e.g., `status:in-progress` → `status:review`)
+- Explicit instruction to update the ticket label when done, following `TICKET_SYSTEM.md`
 
-### 2. CODE REVIEW
+### 2. REVIEW STEP
 **Trigger:** `status:review`
 
 1. Set `status:in-progress` on the ticket (prevents double-dispatch)
-2. Add dispatch comment with role, model, and thinking level (e.g., `Dispatching: Code Reviewer (Model: Sonnet, Thinking: Medium)`)
+2. Add dispatch comment with role, model, and thinking level (e.g., `Dispatching: Code Reviewer (Model: gpt-5.4, Thinking: Medium)`)
 3. Spawn code reviewer to review the **worktree** at `/tmp/wt/{repo-short}-{ticket-num}` (not experiment)
-4. Reviewer sets `status:verification` when approved (or `status:new` on rejection)
+4. Reviewer updates the ticket according to `TICKET_SYSTEM.md` when the review pass ends
 
 **Reviewer gate before full review:** If the engineer comment does not explicitly confirm both sync-from-latest-`origin/experiment` and localhost verification on `http://localhost:<port>` (any localhost port is acceptable), reject immediately to `status:new` with the standard incomplete-handoff comment. Do not spend a full review round on code that missed the handoff gate.
 
-**⛔ On rejection:** The reviewer sets `status:new`. The NEXT CTO triage session dispatches an **engineer** to fix the issues — NOT another code reviewer. Sending the same unchanged branch to review again is a dead loop. The flow is always: CR rejects → `status:new` → engineer fixes → `status:review` → new CR. Never: CR rejects → another CR on the same code.
+**⛔ On rejection:** The reviewer sets `status:new`. The NEXT CTO triage session decides the next step. Do not send unchanged work back through the same review step.
 
-### 3. QA REVIEW
+### 3. VALIDATION STEP
 **Trigger:** `status:verification`
 
-**Never skip QA.**
+Validation is required before closure, but it does not always have to be QA. Use the validation mode CTO selected for the ticket.
 
 1. Set `status:in-progress` on the ticket (prevents double-dispatch)
-2. Add dispatch comment with role, model, and thinking level (e.g., `Dispatching: QA Engineer (Model: Sonnet, Thinking: Medium)`)
+2. Add dispatch comment with role, model, and thinking level (e.g., `Dispatching: QA Engineer (Model: gpt-5.4, Thinking: Medium)`)
 3. Spawn QA agent with `qa-overlay.md`
 
 QA responsibilities:
@@ -181,16 +244,16 @@ QA responsibilities:
 4. On success: **remove the worktree** (`git worktree remove /tmp/wt/{name} --force` from the main repo dir)
 5. On failure: also remove the worktree, then set `status:new`
 
-QA sets `status:cto-review` when passed (or `status:new` on failure).
+The validation role updates the ticket according to `TICKET_SYSTEM.md` when its pass ends.
 
-**⛔ On failure:** Same rule as code review — `status:new` means re-dispatch an **engineer** to fix, not another QA run on the same code.
+**⛔ On failure:** Return the ticket to `status:new` with clear validation evidence. The next CTO pass decides the next step.
 
 ### 4. CTO REVIEW
 **Trigger:** `status:cto-review`
 
-**⛔ PRE-CHECK:** Verify QA Verification Report exists on the ticket. If missing → set `status:verification`.
+**⛔ PRE-CHECK:** Verify the required validation evidence exists on the ticket before closure. If the needed validation is missing, move the ticket back to the appropriate validation status instead of closing.
 
-If QA passed: review the work → if approved → close issue with `status:done`.
+If validation passed: review the work, use CTO judgment, and if satisfied close the issue with `status:done`.
 
 **⚠️ After closing: you MUST run metrics recording + shadow evaluation (see below). Do not exit without completing all 3 closure steps.**
 
@@ -273,6 +336,61 @@ Update `BOARD_REVIEW_STATUS.md`. Archive done tickets. Clean up sessions.
 **Source of truth:** `framework/board-review/REPOS.conf` — one repo per line, shared with precheck.
 
 Scan ALL repos listed there. Run `cat framework/board-review/REPOS.conf` to get the current list.
+
+## Product CTO Sessions
+
+Use one persistent CTO session per product.
+
+Rules:
+- not the main session
+- not a separate persona by default
+- one repo maps to exactly one CTO session
+- Personal Brand may span more than one repo
+- the precheck script currently wakes these via stored `session_id` values using `openclaw agent --session-id`
+
+| Product / Scope | CTO Session Key | Session id | Repo(s) | Primary README | State Namespace |
+|---|---|---|---|---|---|
+| ChurnPilot | `agent:main:cto-churnpilot` | `46dfba9a-c319-41b9-b226-393a7ea10d1a` | `hendrixAIDev/churn_copilot_hendrix` | `projects/churn_copilot/README.md` | `framework/board-review/state/churn_copilot.*` |
+| StatusPulse | `agent:main:cto-statuspulse` | `1b90c3d8-1497-40ad-be99-3a75d46a8635` | `hendrixAIDev/statuspulse` | `projects/statuspulse/README.md` | `framework/board-review/state/statuspulse.*` |
+| Personal Brand | `agent:main:cto-personal-brand` | `77713b76-a090-49ae-abf4-1240e9980787` | `hendrixAIDev/hendrixaidev.github.io`, `hendrixAIDev/hendrixAIDev` | `projects/personal_brand/README.md` | `framework/board-review/state/personal_brand.*` |
+| OpenClaw Assistant | `agent:main:cto-openclaw-assistant` | `b367f243-2b76-4eaf-8e1a-4799ddc4f776` | `zrjaa1/openclaw-assistant` | `projects/openclaw-assistant/README.md` | `framework/board-review/state/openclaw_assistant.*` |
+| Character Life Sim (CLSE) | `agent:main:cto-clse` | `a1c3afc0-fdcf-4271-9a15-ae0f7bedcca2` | `hendrixAIDev/character-life-sim` | `projects/character-life-sim/README.md` | `framework/board-review/state/clse.*` |
+
+Notes:
+- `agent:main:cto-personal-brand` may also need `projects/hendrixAIDev/README.md` for `hendrixAIDev/hendrixAIDev`
+- if site-structure details matter, it may also need `projects/personal_brand/personal_site/README.md`
+- if any session id changes, update both this table and `skills/board-review-precheck/scripts/precheck.sh`
+
+## Product State Artifacts
+
+Each product CTO session reloads one product state artifact namespace under `framework/board-review/state/`.
+
+Minimum shared contract:
+- location: `framework/board-review/state/<product>.*`
+- purpose: compact cross-run product state only
+- reload on every wake
+- reload again after context compaction
+- durable and inspectable
+- update only when the information matters across CTO runs
+- do not duplicate GitHub ticket history
+- do not become a journal or dump
+- promote durable product knowledge to project `README.md`, `docs/`, or `plans/`
+
+State may contain:
+- current operating mode
+- active workflow policies
+- unresolved product decisions
+- durable routing notes
+- recurring failure patterns
+- next-pass notes that still matter after the current run exits
+
+State should not contain:
+- full ticket history
+- verbose run logs
+- implementation details that belong in the ticket
+- durable product decisions that belong in project docs or plans
+
+Per-product CTO sessions define the actual contents later. We define the contract now, not the full per-product schema.
 
 ## Endpoints
 
