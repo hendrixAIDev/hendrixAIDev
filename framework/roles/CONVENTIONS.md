@@ -26,7 +26,7 @@
 
 ## 🔍 Code Navigation — Understand Before You Modify
 
-Before modifying any code, **search and navigate the codebase** to understand context:
+Before modifying any code, **search and navigate the codebase** to understand context. Also check whether a relevant helper skill exists under `skills/` before inventing a new process:
 
 ```bash
 # Keyword search (grep — any language, always fresh)
@@ -83,6 +83,11 @@ bash skills/code-nav/scripts/code-nav.sh names src/ --type class              # 
    - Testing requirements (fix = tested, not just code changed)
    - File organization rules
    - Status transitions
+
+5. **Relevant skills under `skills/`**
+   - Treat `skills/` as an available capability library, not hidden context
+   - Before you start, check whether a relevant skill exists for the task (for example `code-nav`, `agent-browser`, `evolver`, `gh-screenshot`, `ticket-rollback`)
+   - If a relevant skill exists, read its `SKILL.md` and follow it instead of improvising your own workflow
 
 **If you skip these, you WILL violate workflow rules.**
 
@@ -338,8 +343,10 @@ Write Code → Unit Tests → Local Server Test → Mark QA-Ready
    **Engineer handoff checklist:**
    - [x] Synced/rebased from latest `origin/experiment`
    - [x] Tested locally on `http://localhost:8511` (or any localhost port actually used)
-   - [x] Verified: <feature / bugfix description>
+   - [x] Verified: <exact feature / bugfix flow exercised locally>
+   - [x] Expected result observed: <what worked in the running app>
    - [x] Tested edge case(s): <notes>
+   - [x] Console/runtime errors: none (or explain exactly what appeared)
    - [x] Relevant tests passed: <unit / integration / e2e>
    - [x] Ready for code review
    ```
@@ -367,9 +374,12 @@ Write Code → Unit Tests → Local Server Test → Mark QA-Ready
 - This is the proper division of labor: **you test locally, QA tests deployed**
 
 **⛔ Missing handoff proof is a review failure:**
-If the ticket comment does not explicitly confirm both:
-- synced/rebased from latest `origin/experiment`, and
+If the ticket comment does not explicitly confirm all of the following:
+- synced/rebased from latest `origin/experiment`
 - local verification on `http://localhost:<port>` (any localhost port is acceptable)
+- the exact feature or bugfix flow exercised locally
+- the expected result actually observed in the running app
+- console/runtime error status
 
 then the code reviewer should reject the handoff immediately and set the ticket back to `status:new` with a note that the engineer handoff gate was not met.
 
@@ -398,7 +408,9 @@ then the code reviewer should reject the handoff immediately and set the ticket 
 Before code review, the engineer must post a handoff comment confirming:
 - branch synced/rebased from latest `origin/experiment`
 - local verification completed on `http://localhost:<port>` (any localhost port is acceptable)
-- what was tested
+- the exact feature or bugfix flow exercised locally
+- the expected result actually observed in the running app
+- console/runtime error status
 - relevant tests passed
 
 This ticket is being reset to `status:new` so an engineer can complete the required pre-review validation.

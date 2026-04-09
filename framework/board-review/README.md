@@ -20,6 +20,7 @@ Key points:
 - one persistent named CTO session per product
 - precheck wakes the correct product CTO session
 - CTO owns strategy, planning, and next-step decisions
+- CTO dispatches isolated work via `skills/dispatch-agent/` (`dispatch.sh`), not `sessions_spawn`
 - workflows are references, not a rigid router
 - sub-agents work under `status:in-progress`, then normally return tickets to `status:new`
 - CTO re-triages after each completed work pass

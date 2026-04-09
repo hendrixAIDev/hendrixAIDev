@@ -7,16 +7,41 @@
 
 ## Load Context (MANDATORY)
 
-You're operating inside a product CTO session. Load these first:
+You're operating inside a persistent product CTO session. The required load behavior depends on session state.
+
+### 1. Bootstrap load (new session only)
+
+Load these when the product CTO session is first created, or when the session has clearly lost its working context:
 
 1. `MEMORY.md`, `SOUL.md`, `USER.md`, `AGENTS.md`, `PROJECT_STRUCTURE.md`
 2. `memory/YYYY-MM-DD.md` (today + yesterday)
-3. `framework/board-review/BOARD_REVIEW_STATUS.md`
-4. `framework/board-review/TICKET_SYSTEM.md`
-5. `framework/roles/CONVENTIONS.md`
-6. For each product you act on, load the current product state artifact and that project's `README.md`
+3. `framework/board-review/BOARD_REVIEW.md`
+4. `framework/board-review/BOARD_REVIEW_STATUS.md`
+5. `framework/board-review/TICKET_SYSTEM.md`
+6. `framework/roles/CONVENTIONS.md`
+7. Refresh awareness of available capabilities under `skills/` and read the relevant `SKILL.md` files before choosing a workflow that depends on them
+8. For the product you act on, load the current product state artifact and that project's `README.md`
 
-If context was compacted, re-load the product state artifact and project `README.md` before making new dispatch decisions. Outside compaction, prefer reusing persistent session context and reload heavyweight product docs only when needed.
+### 2. Normal wake (default)
+
+On an ordinary wake of an already-running persistent CTO session:
+
+- continue from existing session context
+- do **not** automatically reload the product state artifact if it is maintained only by the CTO session itself
+- do **not** automatically re-read `BOARD_REVIEW.md`, `BOARD_REVIEW_STATUS.md`, or the project `README.md`
+- reload the product state artifact only after compaction, after explicit recovery needs, or when some external process can change it between wakes
+- only re-read heavier docs if the current ticket genuinely needs them
+
+### 3. Post-compaction or context-recovery wake
+
+If auto-compaction happened, or the session clearly lost important working context, re-load before making new dispatch decisions:
+
+1. `framework/board-review/BOARD_REVIEW.md`
+2. `framework/board-review/BOARD_REVIEW_STATUS.md`
+3. the current product state artifact
+4. the current product `README.md` when needed to restore product context
+
+Outside compaction, prefer reusing persistent session context and avoid routine heavyweight reloads.
 
 ---
 
@@ -24,6 +49,8 @@ If context was compacted, re-load the product state artifact and project `README
 
 - The CTO is responsible for strategic decisions and planning within CTO authority
 - Coordinate, don't code — delegate to sub-agents
+- Treat `skills/` as live capability inventory. Before dispatching or choosing a workflow, check whether a relevant skill already exists and use it when appropriate
+- For board-review dispatches, the CTO must use the `dispatch-agent` skill (`skills/dispatch-agent/scripts/dispatch.sh`), not `sessions_spawn`
 - The CTO decides what kind of work is needed, which workflow applies, and what validation is required
 - **ALWAYS dispatch immediately** — never hold for "business hours"
 - Slack target: `C0ABYMAUV3M` (#jj-hendrix) — never #jj-clawra
@@ -36,7 +63,7 @@ If context was compacted, re-load the product state artifact and project `README
 
 **Correct flow:**
 1. Run all 6 phases against current ticket states
-2. Dispatch sub-agents for any actionable work
+2. Dispatch sub-agents for any actionable work using the `dispatch-agent` skill / `dispatch.sh`
 3. Send Slack report, update status file
 4. **EXIT immediately**
 
@@ -53,7 +80,7 @@ If context was compacted, re-load the product state artifact and project `README
 
 **Wake path:** `skills/board-review-precheck/scripts/precheck.sh` runs every minute via OS cron / launchd. It now routes repo activity to the matching product CTO session and wakes that CTO directly with `openclaw agent --session-id ...`, reusing the same persistent session each time. `watchdog.sh` handles stale WIP resets back to `status:new`.
 
-**Prompt model:** bootstrap heavy context once per product CTO session. On normal wakes, rely on persistent session context plus the product state artifact. Reload heavyweight files mainly after context compaction, or when a ticket needs fresh product/docs context.
+**Prompt model:** bootstrap heavy context once per product CTO session. On normal wakes, rely on persistent session context by default. Reload the product state artifact and other heavyweight files mainly after context compaction, during recovery, or when a ticket needs fresh product/docs context.
 
 ## Product CTO Sessions
 
@@ -130,15 +157,19 @@ For each `status:new` ticket:
 4. **⛔ 3-ROUND LIMIT:** Count how many completed engineer rounds this ticket has been through. A "round" is a full cycle where the ticket went through engineer dispatch and came back to `status:new` due to failure at ANY stage — engineer produced no work, code review rejected, QA failed, or CTO review rejected. All of these count as failed rounds. If the ticket has already completed 3 full engineer rounds (i.e., round count > 3), do NOT dispatch again — set `status:needs-jj` with a comment summarizing all attempts and why they failed. This prevents dead loops that waste tokens.
 5. Run evolver capsule match (see below)
 6. Check dependencies
-7. Classify and add a dispatch comment that includes:
+7. Check whether the task should use an existing skill under `skills/` (for example `dispatch-agent`, `evolver`, `agent-browser`, `gh-screenshot`, `ticket-rollback`) and incorporate that into the chosen workflow instead of inventing an ad-hoc path.
+8. Classify and add a dispatch comment that includes:
    - Role being dispatched (e.g., Backend Engineer, Fullstack Engineer, Frontend Engineer, QA Engineer)
    - Model and thinking level (e.g., `Model: gpt-5.4, Thinking: Medium`)
    - Brief description of the task
    - Example: `Dispatching: Fullstack Engineer (Model: gpt-5.4, Thinking: Low) to implement shared render_quota_banner() helper and unify both sections.`
+   - An explicit exit requirement: before the sub-agent stops, it must update the GitHub label away from `status:in-progress` and verify that the label change succeeded
    - For engineering tickets touching UI, API, database queries, or user-facing behavior, explicitly require the engineer handoff checklist in the ticket comment before returning the ticket for CTO re-triage:
      - synced/rebased from latest `origin/experiment`
      - tested locally on `http://localhost:<port>` (any localhost port is acceptable)
-     - brief note on what was verified
+     - exact feature or bugfix flow exercised locally
+     - expected result actually observed in the running app
+     - console/runtime error status
      - relevant tests passed
 
 **Role selection guide:**
@@ -146,8 +177,8 @@ For each `status:new` ticket:
    - **Backend Engineer** (`backend-architect`) — Pure backend work: CLI tools, API logic, database migrations, test infrastructure, non-UI projects (character-life-sim).
    - **Frontend Engineer** (`frontend-engineer`) — Pure frontend work where no backend changes are needed (CSS-only fixes, static layout changes, pure styling). Rare in Streamlit projects.
    - **Content Engineer** (`content-engineer`) — Marketing content: blog posts, product articles, Reddit/social launch posts, SEO content, documentation updates, README rewrites. Use for any ticket that produces written content rather than code. Has its own overlay with product context and legal constraints (BUILD & SERVE phase).
-8. Set the ticket to an active working status, usually `status:in-progress`, before dispatching so precheck does not wake the CTO again while the sub-agent is working
-9. **Move on immediately.** Do NOT check if the sub-agent started working. Do NOT verify branch creation. Do NOT re-dispatch in the same session. The precheck stale-ticket detector handles failures automatically.
+9. Set the ticket to an active working status, usually `status:in-progress`, before dispatching so precheck does not wake the CTO again while the sub-agent is working
+10. **Move on immediately.** Do NOT check if the sub-agent started working. Do NOT verify branch creation. Do NOT re-dispatch in the same session. The precheck stale-ticket detector handles failures automatically.
 
 **Worktree rules for engineers:** Engineers work in an **isolated git worktree** at `/tmp/wt/{repo-short}-{ticket-num}` on branch `fix/{repo-short}-{ticket-num}` (e.g., `/tmp/wt/churn-84` on `fix/churn-84`). They do NOT push to `experiment`. The experiment branch is only touched by QA after code review passes. Code reviewers and QA reuse the same worktree — engineers must NOT remove it.
 
@@ -159,9 +190,10 @@ For each `status:new` ticket:
 
 **Evolver check:**
 ```bash
-workspace/skills/evolver/scripts/signal-extract.sh OWNER REPO ISSUE_NUM | \
+workspace/skills/evolver/scripts/signal-extract.sh OWNER/REPO ISSUE_NUM | \
   workspace/skills/evolver/scripts/capsule-match.sh
 ```
+The helper also accepts `OWNER REPO ISSUE_NUM` for compatibility, but prefer `OWNER/REPO ISSUE_NUM` as the canonical form.
 If a capsule matches, add "Known Solution Hint" in the ticket comment.
 
 **⛔ CONCURRENCY LIMIT:** Platform allows max 8 concurrent sub-agents (`subagents.maxConcurrent = 8`). Before dispatching, count active agents:
@@ -176,7 +208,7 @@ print(f'Active agents: {len(agents)}/8')
 ```
 If at or near the limit (6+), **defer lower-priority dispatches** to the next cycle. Dispatching beyond the limit will silently fail or queue — wasting a CTO session.
 
-**Spawning agents:** Use the dispatch script (NOT `sessions_spawn`):
+**Spawning agents:** Use the dispatch-agent skill's dispatch script (NOT `sessions_spawn`):
 ```bash
 bash skills/dispatch-agent/scripts/dispatch.sh \
   --name "eng-sp26-migration" \
@@ -206,7 +238,7 @@ Adjustment rules:
 
 CTO comments should explicitly state the chosen model and thinking level so the ticket history explains why that level was used.
 
-**Why not `sessions_spawn`?** It announces back to your session, which re-activates you and prevents clean exit. `dispatch.sh` creates fully isolated one-shot cron jobs — no callbacks, no state leakage.
+**Why not `sessions_spawn`?** It announces back to your session, which re-activates you and prevents clean exit. `dispatch.sh` from the `dispatch-agent` skill creates fully isolated one-shot cron jobs with the correct role templates — no callbacks, no state leakage.
 
 Every spawn prompt includes:
 - Role definition: `framework/roles/cached/{role-slug}.md`
@@ -224,7 +256,7 @@ Every spawn prompt includes:
 3. Spawn code reviewer to review the **worktree** at `/tmp/wt/{repo-short}-{ticket-num}` (not experiment)
 4. Reviewer updates the ticket according to `TICKET_SYSTEM.md` when the review pass ends
 
-**Reviewer gate before full review:** If the engineer comment does not explicitly confirm both sync-from-latest-`origin/experiment` and localhost verification on `http://localhost:<port>` (any localhost port is acceptable), reject immediately to `status:new` with the standard incomplete-handoff comment. Do not spend a full review round on code that missed the handoff gate.
+**Reviewer gate before full review:** If the engineer comment does not explicitly confirm sync-from-latest-`origin/experiment`, localhost verification on `http://localhost:<port>` (any localhost port is acceptable), the exact flow exercised, the observed result, and console/runtime error status, reject immediately to `status:new` with the standard incomplete-handoff comment. Do not spend a full review round on code that missed the handoff gate.
 
 **⛔ On rejection:** The reviewer sets `status:new`. The NEXT CTO triage session decides the next step. Do not send unchanged work back through the same review step.
 
@@ -253,7 +285,19 @@ The validation role updates the ticket according to `TICKET_SYSTEM.md` when its 
 
 **⛔ PRE-CHECK:** Verify the required validation evidence exists on the ticket before closure. If the needed validation is missing, move the ticket back to the appropriate validation status instead of closing.
 
-If validation passed: review the work, use CTO judgment, and if satisfied close the issue with `status:done`.
+If validation passed: review the work, use CTO judgment, and if satisfied first set the GitHub label to `status:done`, verify the label change, and then close the issue.
+
+**Required closure sequence:**
+1. Set `status:done` on the ticket
+2. Verify `status:done` is present and no in-flight status label remains
+3. Close the GitHub issue
+
+Example:
+```bash
+gh issue edit <NUMBER> --repo <OWNER/REPO> --remove-label "status:cto-review" --add-label "status:done"
+gh issue view <NUMBER> --repo <OWNER/REPO> --json labels,state | jq '{state: .state, labels: [.labels[].name]}'
+gh issue close <NUMBER> --repo <OWNER/REPO>
+```
 
 **⚠️ After closing: you MUST run metrics recording + shadow evaluation (see below). Do not exit without completing all 3 closure steps.**
 
@@ -303,7 +347,7 @@ exec framework/dspy/shadow-run.sh --stage all --repo OWNER/REPO --ticket TICKET_
 Replace `OWNER/REPO` with the actual repo (e.g., `hendrixAIDev/churn_copilot_hendrix`) and `TICKET_NUMBER` with the issue number (e.g., `162`). This takes ~30-60s and now defaults to `openai/gpt-4.1-mini` unless overridden.
 
 **Checklist for Phase 4 (CTO Review) — all 3 steps required:**
-1. ✅ Close the issue with `status:done`
+1. ✅ Mark the ticket `status:done`, verify it, then close the issue
 2. ✅ Record metrics to all 4 JSONL files
 3. ✅ Run shadow evaluation (command above)
 

@@ -9,6 +9,8 @@
 ### 1. Never Close Issues
 Your final action: update the status label and **STOP**. Only CTO closes issues.
 
+**Hard exit rule:** a sub-agent pass is not complete until the GitHub label is updated. Posting a comment alone is insufficient. Before exiting, run the label-change command, then verify the ticket no longer shows `status:in-progress` unless the CTO explicitly required a different next status.
+
 ### 2. Safe Commit Messages
 Never use auto-close keywords (`Fix #N`, `Closes #N`, `Resolve #N`).  
 Use: `ref #N`, `relates to #N`, `[#N]`.
@@ -73,22 +75,24 @@ Tickets with a `### Dependencies` section listing `- [ ] #N` issue refs use GitH
 ### Default success rule
 
 When your work pass is complete:
-1. Set the ticket to `status:new`
-2. Post a comment with:
+1. Post a comment with:
    - what you did
    - what result you got
    - what validation you performed, if any
    - what you recommend as the next step
-3. Leave the issue **OPEN**
+2. Set the ticket to `status:new`
+3. Verify the label change succeeded and `status:in-progress` is gone
+4. Leave the issue **OPEN**
 
 This wakes CTO back up to decide the next move.
 
 ### Failure rule
 
 If your work fails, is rejected, or you cannot complete the task:
-1. Set `status:new` on the ticket
-2. Post a comment explaining what failed and why
-3. Leave the issue **OPEN**
+1. Post a comment explaining what failed and why
+2. Set `status:new` on the ticket
+3. Verify the label change succeeded and `status:in-progress` is gone
+4. Leave the issue **OPEN**
 
 ### Exception rule
 
@@ -99,13 +103,19 @@ Only set a more specific status such as `status:review`, `status:verification`, 
 ```bash
 # Remove old label, add new one
 gh issue edit <NUMBER> --repo <OWNER/REPO> --remove-label "status:in-progress" --add-label "status:new"
+
+# Then verify the result before exit
+gh issue view <NUMBER> --repo <OWNER/REPO> --json labels | jq -r '.labels[].name'
 ```
+
+If `status:in-progress` is still present after your update attempt, your pass is not finished. Fix the label state before exiting.
 
 ### Completion checklist (all roles):
 
 - [ ] Work completed (or failure documented)
 - [ ] Completion/failure comment posted on GitHub issue
 - [ ] Label updated before exit
+- [ ] Verified `status:in-progress` was removed (unless CTO explicitly required a different next status)
 - [ ] Issue left **OPEN** (only CTO closes issues)
 
 ---
@@ -135,7 +145,9 @@ Before an engineer returns a ticket to CTO, the ticket comment must explicitly i
 
 - confirmation the branch was synced/rebased from latest `origin/experiment`
 - confirmation the fix was tested locally on `http://localhost:<port>` (any localhost port is acceptable)
-- short note on what was verified
+- the exact feature or bugfix flow exercised locally
+- the expected result actually observed in the running app
+- console/runtime error status
 - relevant tests that passed
 
 **Required template:**
@@ -144,13 +156,15 @@ Before an engineer returns a ticket to CTO, the ticket comment must explicitly i
 **Engineer handoff checklist:**
 - [x] Synced/rebased from latest `origin/experiment`
 - [x] Tested locally on `http://localhost:8511` (or any localhost port actually used)
-- [x] Verified: <feature / bugfix description>
+- [x] Verified: <exact feature / bugfix flow exercised locally>
+- [x] Expected result observed: <what worked in the running app>
 - [x] Tested edge case(s): <notes>
+- [x] Console/runtime errors: none (or explain exactly what appeared)
 - [x] Relevant tests passed: <unit / integration / e2e>
 - [x] Ready for code review
 ```
 
-If this handoff comment is missing, incomplete, or does not mention both sync-from-`experiment` and localhost verification, the next CTO pass should treat the handoff as incomplete and send it back for correction instead of advancing.
+If this handoff comment is missing, incomplete, or does not mention sync-from-`experiment`, localhost verification, the exact flow exercised, the observed result, and console/runtime error status, the next CTO pass should treat the handoff as incomplete and send it back for correction instead of advancing.
 
 **Suggested rejection comment:**
 
@@ -160,7 +174,9 @@ If this handoff comment is missing, incomplete, or does not mention both sync-fr
 Before code review, the engineer must post a handoff comment confirming:
 - branch synced/rebased from latest `origin/experiment`
 - local verification completed on `http://localhost:<port>` (any localhost port is acceptable)
-- what was tested
+- the exact feature or bugfix flow exercised locally
+- the expected result actually observed in the running app
+- console/runtime error status
 - relevant tests passed
 
 Resetting to `status:new` so an engineer can complete the required pre-review validation.
@@ -173,6 +189,8 @@ Resetting to `status:new` so an engineer can complete the required pre-review va
 Sub-agents never close tickets.
 
 Before CTO closes a ticket, the ticket must contain the validation evidence CTO decided was required for that ticket.
+
+When the CTO closes a ticket in the board-review workflow, the CTO must first set the ticket label to `status:done`, verify that label change, and only then close the GitHub issue.
 
 ## PRECHECK_STATE.json — Hands Off
 
