@@ -46,14 +46,14 @@ schema:
 tasks:
   - id: fpm-20260509-001
     created_at: '2026-05-09T21:07:00-07:00'
-    updated_at: '2026-05-09T21:12:00-07:00'
+    updated_at: '2026-05-09T21:42:00-07:00'
     source: jj
     title: Visualize the current organization view layered by product, role, and work stage
     problem_statement: The framework already coordinates products, CTO sessions, role dispatch, board-review states, GitHub tickets, and task queues, but there is no clear organization-level visualization that shows the current layer-by-product operating view. JJ wants a PM discovery pass to inspect the current framework implementation and propose a visualization where each product can show role status and pending task/ticket stage.
     expected_behavior: The Framework PM should read the current framework implementation and propose a practical organization-view visualization concept. The concept should layer by product and expose, per product, each role's status plus the stage/status of pending tasks and GitHub tickets.
     priority: high
-    status: done
-    github_issue: ''
+    status: ticketed
+    github_issue: hendrixAIDev/hendrixAIDev#27
     attempt_count: 0
     evidence:
       - type: request
@@ -73,5 +73,6 @@ tasks:
       - Focus the first concept on making the organization state legible: products, roles, current role activity, ticket stages, queue backlog, blockers, and next decisions.
       - Created `framework/plans/org-view-visualization.md` with a layered org-board proposal covering product rows, role chips, normalized queue/ticket stages, concrete data sources, MVP slices, and CTO/JJ decision questions.
       - Recommended a read-only Organization Operations Map first, with one row per product and explicit separation between PM queue stages, CTO orchestration state, and GitHub execution stages.
-    cto_notes: []
+    cto_notes:
+      - '2026-05-09 21:42 PDT - Promoted PM discovery artifact to GitHub as Framework #27 for CTO/execution intake after JJ noticed the queue item had no linked ticket.'
     last_cto_reviewed_at: ''
