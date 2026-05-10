@@ -9,6 +9,8 @@ Default path:
 4. Create follow-up tickets, dispatch another workflow, escalate, or close
 
 Notes:
-- may create new tickets directly
+- PM/product-discovery passes should update the project-local task queue by default
+- CTO promotes queue items into GitHub tickets during board-review queue intake
+- direct ticket creation is allowed only when CTO explicitly requests it
 - no engineering work is required by default
 - CTO decides what happens after analysis returns

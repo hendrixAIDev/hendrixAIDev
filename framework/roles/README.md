@@ -11,6 +11,7 @@ Role-based agent system. Each dispatched sub-agent gets: cached role + shared ov
 | **Frontend Engineer** | `frontend-engineer.md` | `frontend-engineer-overlay.md` |
 | **Code Reviewer** | `code-reviewer.md` | `code-review-overlay.md` |
 | **QA Engineer** | `qa-engineer.md` | `qa-overlay.md` |
+| **Product Manager** | `product-manager.md` | `product-manager-overlay.md` |
 | **Product Readiness Auditor** | `product-readiness-auditor.md` | `product-readiness-overlay.md` |
 | **User Journey Auditor** | `user-journey-auditor.md` | `user-journey-overlay.md` |
 | **Trust & Risk Auditor** | `trust-risk-auditor.md` | `trust-risk-overlay.md` |
@@ -23,12 +24,16 @@ All roles also receive `overlays/shared-overlay.md` (tech stack, projects, tools
 1. CTO dispatches via `skills/dispatch-agent/` with `--role <name>`
 2. Dispatch script composes prompt from `skills/dispatch-agent/references/<name>.md`
 3. Template tells sub-agent to read: TICKET_SYSTEM → CONVENTIONS → cached role → shared overlay → role overlay
-4. Sub-agent executes, updates ticket label, exits
+4. Ticket sub-agent executes, updates ticket label, exits. PM discovery sub-agents update the project-local task queue instead of ticket labels.
 
 ## Key Files
 
 - **CONVENTIONS.md** — Rules for ALL sub-agents (commits, lint, testing, docs)
 - **overlays/shared-overlay.md** — Common context (tech stack, Supabase, Streamlit, project list)
+
+## Product Discovery Role
+
+The **Product Manager** role is used for on-demand product discovery passes. It reads product docs/specs/PRDs and updates the project-local task queue, for example `projects/churn_copilot/plans/task-queue.yaml`. The PM does not create GitHub issues by default; the product CTO promotes queue items into tickets during board-review intake.
 
 ## Launch Analysis Roles
 

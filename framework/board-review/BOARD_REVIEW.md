@@ -21,6 +21,7 @@ Load these when the product CTO session is first created, or when the session ha
 6. `framework/roles/CONVENTIONS.md`
 7. Refresh awareness of available capabilities under `skills/` and read the relevant `SKILL.md` files before choosing a workflow that depends on them
 8. For the product you act on, load the current product state artifact and that project's `README.md`
+9. If the product has a project-local task queue, load it when it may have changed externally or when queue intake is due. ChurnPilot queue: `projects/churn_copilot/plans/task-queue.yaml`
 
 ### 2. Normal wake (default)
 
@@ -62,7 +63,7 @@ Outside compaction, prefer reusing persistent session context and avoid routine 
 **CTO runtime is short-lived, but session identity is persistent per product.** Process what's available NOW, then exit. Do NOT wait for sub-agents to finish.
 
 **Correct flow:**
-1. Run all 6 phases against current ticket states
+1. Run queue intake when due, then all 6 phases against current ticket states
 2. Dispatch sub-agents for any actionable work using the `dispatch-agent` skill / `dispatch.sh`
 3. Send Slack report, update status file
 4. **EXIT immediately**
@@ -90,7 +91,8 @@ These are the persistent product CTO sessions currently bound for board review a
 |---|---|---|---|
 | ChurnPilot | `agent:main:cto-churnpilot` | `46dfba9a-c319-41b9-b226-393a7ea10d1a` | `hendrixAIDev/churn_copilot_hendrix` |
 | StatusPulse | `agent:main:cto-statuspulse` | `1b90c3d8-1497-40ad-be99-3a75d46a8635` | `hendrixAIDev/statuspulse` |
-| Personal Brand | `agent:main:cto-personal-brand` | `77713b76-a090-49ae-abf4-1240e9980787` | `hendrixAIDev/hendrixAIDev`, `hendrixAIDev/hendrixaidev.github.io` |
+| Framework | `agent:main:cto-framework` | `c164faba-3307-4cb9-9a7a-38bebf3f5b81` | `hendrixAIDev/hendrixAIDev` |
+| Personal Brand | `agent:main:cto-personal-brand` | `77713b76-a090-49ae-abf4-1240e9980787` | `hendrixAIDev/hendrixaidev.github.io` |
 | OpenClaw Assistant | `agent:main:cto-openclaw-assistant` | `b367f243-2b76-4eaf-8e1a-4799ddc4f776` | `zrjaa1/openclaw-assistant` |
 | CLSE | `agent:main:cto-clse` | `a1c3afc0-fdcf-4271-9a15-ae0f7bedcca2` | `hendrixAIDev/character-life-sim` |
 
@@ -143,6 +145,63 @@ Enforced rules:
 - move the ticket out of `status:new` while a sub-agent is working
 - keep existing generic labels for now
 
+## Product Improvement Task Queue Intake
+
+The board-review pipeline can consume project-local PM task queues. This is the bridge from product discovery to GitHub execution.
+
+### ChurnPilot Queue
+
+```text
+projects/churn_copilot/plans/task-queue.yaml
+```
+
+### Queue Ownership
+
+- **PM owns product framing:** `title`, `problem_statement`, `expected_behavior`, `source`, `evidence`, `pm_notes`.
+- **CTO owns execution state:** `status`, `priority`, `github_issue`, `attempt_count`, `cto_notes`, `last_cto_reviewed_at`.
+- CTO must not rewrite PM-owned problem framing. If the CTO disagrees, add `cto_notes`, lower priority, mark `rejected`, `blocked`, or `needs_human`.
+
+### Queue Intake Rule
+
+Before triaging GitHub `status:new` tickets, check the product task queue when:
+
+- the queue may have changed externally,
+- a PM run just completed,
+- the CTO session rehydrated after compaction/recovery, or
+- there are no higher-priority active GitHub tickets and token budget allows intake.
+
+For each queue item with `status: proposed` or `status: triaged` and no `github_issue`:
+
+1. Skip if `status` is `blocked`, `done`, `rejected`, or `needs_human`.
+2. Skip automatic promotion if `attempt_count >= 3`; set `status: needs_human` or `blocked` and add a CTO note.
+3. Check open GitHub issues for duplicates before creating a new issue. If a matching issue exists, set `github_issue` and choose `ticketed` or `in_progress` based on the issue labels.
+4. Promote the highest-priority actionable queue item(s) into GitHub issues when capacity allows. Do not flood the repo; prefer one to three high-quality tickets per CTO cycle.
+5. The created issue must include:
+   - PM title,
+   - problem statement,
+   - expected behavior,
+   - priority,
+   - source queue id,
+   - acceptance tests added by CTO,
+   - any CTO notes or constraints.
+6. Update the queue item with:
+   - `status: ticketed`,
+   - `github_issue: OWNER/REPO#N`,
+   - `last_cto_reviewed_at`,
+   - a `cto_notes` entry describing the promotion.
+
+### Queue Retry / Loop Prevention
+
+When a linked GitHub work cycle fails and returns for retry, increment the queue item `attempt_count` if the issue maps to a queue id.
+
+If `attempt_count >= 3`:
+
+- stop automatic redispatch,
+- set queue `status: needs_human` or `blocked`,
+- add a CTO note summarizing failed attempts,
+- set the GitHub issue to `status:needs-jj` or `status:blocked` depending on whether the blocker is product/human or technical,
+- report the escalation in the CTO status update.
+
 ## 6-Phase Workflow
 
 ### 1. TRIAGE & DISPATCH
@@ -172,11 +231,14 @@ For each `status:new` ticket:
      - console/runtime error status
      - relevant tests passed
 
+**Manual retry rule:** If the CTO uses a raw `--message` dispatch instead of a role template (common for narrow retries or reviewability recovery), the prompt itself MUST explicitly require the sub-agent to post its verdict as a GitHub issue comment and change the ticket label away from `status:in-progress`. Otherwise the verdict may stay only in the isolated run summary, which the watchdog cannot see.
+
 **Role selection guide:**
    - **Fullstack Engineer** (`fullstack-engineer`) — Default for Streamlit projects (ChurnPilot, StatusPulse). Use when the ticket touches UI AND data/logic layers, or when it involves Streamlit state management, session handling, or deployment. Most ChurnPilot tickets are fullstack.
    - **Backend Engineer** (`backend-architect`) — Pure backend work: CLI tools, API logic, database migrations, test infrastructure, non-UI projects (character-life-sim).
    - **Frontend Engineer** (`frontend-engineer`) — Pure frontend work where no backend changes are needed (CSS-only fixes, static layout changes, pure styling). Rare in Streamlit projects.
    - **Content Engineer** (`content-engineer`) — Marketing content: blog posts, product articles, Reddit/social launch posts, SEO content, documentation updates, README rewrites. Use for any ticket that produces written content rather than code. Has its own overlay with product context and legal constraints (BUILD & SERVE phase).
+   - **Product Manager** (`product-manager`) — On-demand product discovery only, not normal GitHub ticket execution. PM reads product docs/specs and updates the project-local task queue. CTO promotes queue items into tickets later.
 9. Set the ticket to an active working status, usually `status:in-progress`, before dispatching so precheck does not wake the CTO again while the sub-agent is working
 10. **Move on immediately.** Do NOT check if the sub-agent started working. Do NOT verify branch creation. Do NOT re-dispatch in the same session. The precheck stale-ticket detector handles failures automatically.
 
@@ -216,6 +278,19 @@ bash skills/dispatch-agent/scripts/dispatch.sh \
 ```
 
 Options: `--model <alias>` (default: `openai-codex/gpt-5.4`), `--thinking <level>` (default: `medium`), `--timeout <sec>` (default: 1200), `--delay <duration>` (default: 1m).
+
+**On-demand PM dispatch example:**
+```bash
+bash skills/dispatch-agent/scripts/dispatch.sh \
+  --name "pm-churnpilot-gap-scan" \
+  --role product-manager \
+  --project "ChurnPilot" \
+  --project-path "projects/churn_copilot" \
+  --queue-file "projects/churn_copilot/plans/task-queue.yaml" \
+  --spec-paths $'- README.md\n- docs/README.md\n- docs/USER_JOURNEYS.md\n- plans/CHURNPILOT_EXECUTION_PLAN.md' \
+  --model openai-codex/gpt-5.4 \
+  --thinking medium
+```
 
 **Thinking-level policy (CTO-controlled):**
 - The dispatch default is `thinking=medium`, but the CTO should override it deliberately.
@@ -396,12 +471,12 @@ Rules:
 |---|---|---|---|---|---|
 | ChurnPilot | `agent:main:cto-churnpilot` | `46dfba9a-c319-41b9-b226-393a7ea10d1a` | `hendrixAIDev/churn_copilot_hendrix` | `projects/churn_copilot/README.md` | `framework/board-review/state/churn_copilot.*` |
 | StatusPulse | `agent:main:cto-statuspulse` | `1b90c3d8-1497-40ad-be99-3a75d46a8635` | `hendrixAIDev/statuspulse` | `projects/statuspulse/README.md` | `framework/board-review/state/statuspulse.*` |
-| Personal Brand | `agent:main:cto-personal-brand` | `77713b76-a090-49ae-abf4-1240e9980787` | `hendrixAIDev/hendrixaidev.github.io`, `hendrixAIDev/hendrixAIDev` | `projects/personal_brand/README.md` | `framework/board-review/state/personal_brand.*` |
+| Framework | `agent:main:cto-framework` | `c164faba-3307-4cb9-9a7a-38bebf3f5b81` | `hendrixAIDev/hendrixAIDev` | `projects/hendrixAIDev/README.md` | `framework/board-review/state/framework.*` |
+| Personal Brand | `agent:main:cto-personal-brand` | `77713b76-a090-49ae-abf4-1240e9980787` | `hendrixAIDev/hendrixaidev.github.io` | `projects/personal_brand/README.md` | `framework/board-review/state/personal_brand.*` |
 | OpenClaw Assistant | `agent:main:cto-openclaw-assistant` | `b367f243-2b76-4eaf-8e1a-4799ddc4f776` | `zrjaa1/openclaw-assistant` | `projects/openclaw-assistant/README.md` | `framework/board-review/state/openclaw_assistant.*` |
 | Character Life Sim (CLSE) | `agent:main:cto-clse` | `a1c3afc0-fdcf-4271-9a15-ae0f7bedcca2` | `hendrixAIDev/character-life-sim` | `projects/character-life-sim/README.md` | `framework/board-review/state/clse.*` |
 
 Notes:
-- `agent:main:cto-personal-brand` may also need `projects/hendrixAIDev/README.md` for `hendrixAIDev/hendrixAIDev`
 - if site-structure details matter, it may also need `projects/personal_brand/personal_site/README.md`
 - if any session id changes, update both this table and `skills/board-review-precheck/scripts/precheck.sh`
 

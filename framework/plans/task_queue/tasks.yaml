@@ -1,0 +1,77 @@
+---
+version: 1
+project: Framework
+project_path: framework
+repo: hendrixAIDev/hendrixAIDev
+queue_owner: framework-pm
+updated_at: '2026-05-09T21:07:00-07:00'
+schema:
+  required_fields:
+    - id
+    - title
+    - problem_statement
+    - expected_behavior
+    - priority
+    - status
+    - github_issue
+    - attempt_count
+    - cto_notes
+  priority_values:
+    - high
+    - medium
+    - low
+  status_values:
+    - proposed
+    - triaged
+    - ticketed
+    - in_progress
+    - blocked
+    - done
+    - rejected
+    - needs_human
+  pm_owned_fields:
+    - title
+    - problem_statement
+    - expected_behavior
+    - source
+    - evidence
+    - pm_notes
+  cto_owned_fields:
+    - status
+    - priority
+    - github_issue
+    - attempt_count
+    - cto_notes
+    - last_cto_reviewed_at
+tasks:
+  - id: fpm-20260509-001
+    created_at: '2026-05-09T21:07:00-07:00'
+    updated_at: '2026-05-09T21:12:00-07:00'
+    source: jj
+    title: Visualize the current organization view layered by product, role, and work stage
+    problem_statement: The framework already coordinates products, CTO sessions, role dispatch, board-review states, GitHub tickets, and task queues, but there is no clear organization-level visualization that shows the current layer-by-product operating view. JJ wants a PM discovery pass to inspect the current framework implementation and propose a visualization where each product can show role status and pending task/ticket stage.
+    expected_behavior: The Framework PM should read the current framework implementation and propose a practical organization-view visualization concept. The concept should layer by product and expose, per product, each role's status plus the stage/status of pending tasks and GitHub tickets.
+    priority: high
+    status: done
+    github_issue: ''
+    attempt_count: 0
+    evidence:
+      - type: request
+        ref: 'Slack #jj-hendrix 2026-05-09 21:07 PDT'
+        note: JJ requested a framework PM agent and assigned this as its first task.
+      - type: doc
+        ref: framework/README.md
+        note: Framework is the operational engine for the AI-assisted development workflow.
+      - type: doc
+        ref: framework/board-review/BOARD_REVIEW.md
+        note: Board review defines product CTO sessions, role/status flow, and ticket orchestration.
+      - type: code
+        ref: skills/board-review-precheck/scripts/precheck.sh
+        note: Precheck currently scans repos and product task queues to wake mapped CTO sessions.
+    pm_notes:
+      - Discovery/planning only. Do not create GitHub issues, dispatch engineers/QA/reviewers, or execute external product/marketing actions unless the CTO explicitly asks.
+      - Focus the first concept on making the organization state legible: products, roles, current role activity, ticket stages, queue backlog, blockers, and next decisions.
+      - Created `framework/plans/org-view-visualization.md` with a layered org-board proposal covering product rows, role chips, normalized queue/ticket stages, concrete data sources, MVP slices, and CTO/JJ decision questions.
+      - Recommended a read-only Organization Operations Map first, with one row per product and explicit separation between PM queue stages, CTO orchestration state, and GitHub execution stages.
+    cto_notes: []
+    last_cto_reviewed_at: ''

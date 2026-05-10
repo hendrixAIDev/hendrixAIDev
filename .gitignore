@@ -16,9 +16,10 @@ __pycache__/
 
 # OS
 .DS_Store
-
-# Framework local/runtime artifacts
+# Runtime/generated framework artifacts
 framework/board-review/logs/
 framework/board-review/runlocks/
+framework/board-review/PRECHECK_FAILURE_STATE.json
 framework/dspy/.venv/
-framework/evolver/hub-node-id.txt
+framework/dspy/__pycache__/
+skills/**/.venv/

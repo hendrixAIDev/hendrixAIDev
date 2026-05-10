@@ -18,6 +18,9 @@ framework/
 │   ├── CONVENTIONS.md       — Rules for ALL sub-agents (commits, lint, testing)
 │   ├── cached/              — Agent role definitions (5 active)
 │   └── overlays/            — Context overlays (shared + role-specific)
+├── plans/                   — Framework PM planning artifacts and task queue
+│   ├── README.md            — PM session + planning file index
+│   └── task_queue/tasks.yaml — Framework PM/CTO intake queue
 └── evolver/                 — EvoMap capsule system
 ```
 
@@ -30,6 +33,8 @@ framework/
 | `board-review/TICKET_SYSTEM.md` | All sub-agents | Label rules, status flow |
 | `roles/CONVENTIONS.md` | All sub-agents | Commit, lint, test, doc rules |
 | `roles/overlays/shared-overlay.md` | All sub-agents | Tech stack, projects, tools |
+| `plans/README.md` | Framework PM/CTO | Planning artifacts and PM session registry |
+| `plans/task_queue/tasks.yaml` | Framework PM/CTO | Framework task queue scanned by board-review precheck |
 
 ## Active Roles
 
