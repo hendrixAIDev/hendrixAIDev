@@ -191,7 +191,7 @@ def test_build_churnpilot_detail_shows_all_roles_even_when_idle(tmp_path: Path, 
     assert "queue state is done" in detail["raw_status_context"].lower()
 
 
-def test_build_churnpilot_detail_marks_cached_ticket_state_when_live_github_is_unavailable(
+def test_build_churnpilot_detail_keeps_cached_open_issue_context_out_of_actionable_counts(
     tmp_path: Path, monkeypatch
 ) -> None:
     repo_root = _repo_root(tmp_path)
@@ -203,7 +203,6 @@ def test_build_churnpilot_detail_marks_cached_ticket_state_when_live_github_is_u
         repo_root / "framework" / "board-review" / "PRECHECK_STATE.json",
         {
             "lastCheckTime": "2026-05-16T06:06:23Z",
-            "actionableIssueNumbersByRepo": {"hendrixAIDev/churn_copilot_hendrix": [223, 224]},
             "openIssuesByRepo": {"hendrixAIDev/churn_copilot_hendrix": [223, 224]},
         },
     )
@@ -214,6 +213,8 @@ def test_build_churnpilot_detail_marks_cached_ticket_state_when_live_github_is_u
     detail = build_churnpilot_detail(repo_root, now=datetime(2026, 5, 16, 6, 10, tzinfo=timezone.utc))
 
     assert detail["active_issue_count"] == 2
-    assert detail["open_actionable_ticket_count"] == 2
+    assert detail["open_actionable_ticket_count"] is None
     assert detail["active_issue_titles"] == []
+    assert detail["active_issue_numbers"] == [223, 224]
+    assert "#223" in detail["raw_status_context"]
     assert "cached" in detail["source_fidelity_note"].lower()

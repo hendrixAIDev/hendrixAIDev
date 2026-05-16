@@ -80,8 +80,10 @@ def _render_churnpilot_detail(detail: dict) -> None:
     )
 
     meta_cols = st.columns(4, gap="small")
+    ticket_count = detail["open_actionable_ticket_count"]
+    ticket_text = "n/a" if ticket_count is None else str(ticket_count)
     meta_cols[0].metric("Stage", detail["normalized_stage_group"])
-    meta_cols[1].metric("Actionable tickets", str(detail["open_actionable_ticket_count"]))
+    meta_cols[1].metric("Actionable tickets", ticket_text)
     meta_cols[2].markdown("**Repo**")
     meta_cols[2].code(str(detail["repo"]), language=None)
     meta_cols[3].markdown("**Task queue**")

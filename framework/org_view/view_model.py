@@ -109,26 +109,28 @@ def _issue_context(
     *,
     cached_actionable_numbers: Optional[List[int]],
     cached_open_numbers: Optional[List[int]],
-) -> Tuple[Optional[int], List[str], Set[str], bool, bool, List[int]]:
+) -> Tuple[Optional[int], List[str], Set[str], bool, bool, List[int], int]:
     if issues is None:
         if cached_actionable_numbers is not None:
+            active_numbers = cached_open_numbers if cached_open_numbers is not None else cached_actionable_numbers
             return (
                 len(cached_actionable_numbers),
                 [],
                 set(),
                 False,
                 True,
-                list(cached_actionable_numbers),
+                list(active_numbers),
+                len(active_numbers),
             )
         if cached_open_numbers is not None:
-            return len(cached_open_numbers), [], set(), False, True, list(cached_open_numbers)
-        return None, [], set(), False, False, []
+            return None, [], set(), False, True, list(cached_open_numbers), len(cached_open_numbers)
+        return None, [], set(), False, False, [], 0
 
     actionable = [issue for issue in issues if ACTIONABLE_LABELS.intersection(issue.get("labels", []))]
     labels = {label for issue in actionable for label in issue.get("labels", [])}
     titles = [f"#{issue['number']} {issue['title']}" for issue in actionable]
-    numbers = [int(issue["number"]) for issue in actionable]
-    return len(actionable), titles, labels, True, False, numbers
+    active_numbers = [int(issue["number"]) for issue in issues]
+    return len(actionable), titles, labels, True, False, active_numbers, len(active_numbers)
 
 
 def _current_status_text(issue_titles: List[str], queue_status: Optional[str], last_result: Optional[str]) -> str:
@@ -360,7 +362,15 @@ def _product_contexts(bundle: Any, now: datetime) -> Dict[str, Dict[str, Any]]:
             bundle.precheck_state, "actionableIssueNumbersByRepo", repo
         )
         cached_open_numbers = _precheck_issue_numbers(bundle.precheck_state, "openIssuesByRepo", repo)
-        issue_count, issue_titles, issue_labels, live_github, cached_ticket_state, issue_numbers = _issue_context(
+        (
+            issue_count,
+            issue_titles,
+            issue_labels,
+            live_github,
+            cached_ticket_state,
+            issue_numbers,
+            active_issue_count,
+        ) = _issue_context(
             live_issues,
             cached_actionable_numbers=cached_actionable_numbers,
             cached_open_numbers=cached_open_numbers,
@@ -429,6 +439,7 @@ def _product_contexts(bundle: Any, now: datetime) -> Dict[str, Dict[str, Any]]:
             "queue_data": queue_data,
             "queue_status": queue_status,
             "issue_count": issue_count,
+            "active_issue_count": active_issue_count,
             "issue_titles": issue_titles,
             "issue_labels": issue_labels,
             "issue_numbers": issue_numbers,
@@ -518,14 +529,14 @@ def _churnpilot_detail(context: Optional[Dict[str, Any]]) -> Optional[Dict[str, 
         "snapshot_source": context["snapshot_source"],
         "snapshot_timestamp_text": context["latest_timestamp_text"],
         "source_fidelity_note": "; ".join(fragment for fragment in fidelity_fragments if fragment),
-        "active_issue_count": 0 if context["issue_count"] is None else context["issue_count"],
+        "active_issue_count": context["active_issue_count"],
         "active_issue_titles": context["issue_titles"],
         "active_issue_numbers": context["issue_numbers"],
         "current_status_text": detail_status,
         "normalized_stage_group": context["stage"],
         "stage_summary_text": _stage_summary(context["stage"]),
         "next_attention_text": _next_attention(context["stage"]),
-        "open_actionable_ticket_count": 0 if context["issue_count"] is None else context["issue_count"],
+        "open_actionable_ticket_count": context["issue_count"],
         "role_chips": role_chips,
         "normalized_stage_legend": list(STAGE_LEGEND),
         "raw_status_context": context["raw_status_context"],
