@@ -95,8 +95,7 @@ def _render_churnpilot_detail(detail: dict) -> None:
     if detail["active_issue_titles"]:
         for title in detail["active_issue_titles"]:
             status_cols[0].write("- " + title)
-    else:
-        status_cols[0].caption(detail["active_issue_context_note"])
+    status_cols[0].caption(detail["active_issue_context_note"])
 
     status_cols[1].markdown("**Stage summary**")
     status_cols[1].write(detail["stage_summary_text"])

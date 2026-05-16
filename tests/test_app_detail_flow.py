@@ -212,3 +212,48 @@ def test_render_churnpilot_detail_back_button_clears_query_param(monkeypatch) ->
     )
 
     assert "product" not in fake_st.query_params
+
+
+def test_render_churnpilot_detail_keeps_provenance_with_active_issue_titles(monkeypatch) -> None:
+    fake_st = FakeStreamlit()
+    app = _load_app(monkeypatch, fake_st)
+
+    app._render_churnpilot_detail(
+        {
+            "product_name": "ChurnPilot",
+            "detail_scope_label": "MVP 1 pilot detail page",
+            "normalized_stage_group": "Doing",
+            "open_actionable_ticket_count": 2,
+            "repo": "hendrixAIDev/churn_copilot_hendrix",
+            "task_queue": "frontend",
+            "snapshot_source": "Backed by product state.",
+            "snapshot_timestamp_text": "Latest source timing: precheck 2026-05-16 06:06 UTC.",
+            "active_issue_titles": [
+                "#34 Make MVP 1 org-view source provenance explicit",
+                "#35 Verify sparse-state messaging",
+            ],
+            "active_issue_context_note": "Issue titles come from current actionable GitHub ticket state.",
+            "current_status_text": "Frontend review fix is active.",
+            "stage_summary_text": "Current ticket and queue state show active work in progress.",
+            "next_attention_text": "Review the active issue evidence and merge after validation.",
+            "open_actionable_ticket_text": "2",
+            "role_chips": [
+                {
+                    "role_name": "Frontend Engineer",
+                    "role_state": "active",
+                    "role_state_reason": "Active ticket context is present.",
+                    "role_source_note": "Directly inferred from current actionable ticket state.",
+                }
+            ],
+            "source_fidelity_note": "ticket state cached; detail view is intentionally read-only",
+            "normalized_stage_legend": ["Blocked", "Ready for CTO", "Done"],
+            "raw_status_context": "Latest source timing: precheck 2026-05-16 06:06 UTC.",
+        }
+    )
+
+    assert ("write", "- #34 Make MVP 1 org-view source provenance explicit") in fake_st.calls
+    assert ("write", "- #35 Verify sparse-state messaging") in fake_st.calls
+    assert (
+        "caption",
+        "Issue titles come from current actionable GitHub ticket state.",
+    ) in fake_st.calls
