@@ -17,8 +17,6 @@ for module_name in _RELOAD_MODULES:
     if module_name in sys.modules:
         importlib.reload(sys.modules[module_name])
 
-from framework.org_view.view_model import build_org_summary
-
 
 def _render_row(row: dict) -> None:
     detail_label = "MVP 1 detail" if row["detail_page_available"] else "Summary only"
@@ -38,6 +36,8 @@ def _render_row(row: dict) -> None:
 
 
 def main() -> None:
+    from framework.org_view.view_model import build_org_summary
+
     st.set_page_config(
         page_title="Framework Org View",
         page_icon=":material/account_tree:",
