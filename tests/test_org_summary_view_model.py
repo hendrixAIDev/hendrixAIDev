@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from framework.org_view.source_data import load_sources
-from framework.org_view.view_model import build_org_summary
+from framework.org_view.view_model import build_churnpilot_detail, build_org_summary
 
 
 def _write_json(path: Path, payload: dict) -> None:
@@ -151,3 +151,69 @@ def test_build_org_summary_maps_stage_detail_and_sparse_confidence(tmp_path: Pat
 
     assert rows["statuspulse"]["normalized_stage_group"] == "Blocked"
     assert rows["statuspulse"]["actionability_signal"] == "blocked"
+
+
+def test_build_churnpilot_detail_shows_all_roles_even_when_idle(tmp_path: Path, monkeypatch) -> None:
+    repo_root = _repo_root(tmp_path)
+    workspace_root = tmp_path / "workspace"
+
+    import framework.org_view.source_data as source_data
+
+    monkeypatch.setattr(source_data, "_workspace_root", lambda: workspace_root)
+    monkeypatch.setattr(
+        source_data,
+        "_fetch_open_github_issues",
+        lambda repo: {
+            "hendrixAIDev/hendrixAIDev": [],
+            "hendrixAIDev/churn_copilot_hendrix": [],
+            "hendrixAIDev/statuspulse": [],
+        }.get(repo),
+    )
+
+    detail = build_churnpilot_detail(repo_root, now=datetime(2026, 5, 16, 6, 10, tzinfo=timezone.utc))
+
+    assert detail["product_key"] == "churnpilot"
+    assert detail["normalized_stage_group"] == "Done"
+    assert detail["active_issue_count"] == 0
+    assert detail["open_actionable_ticket_count"] == 0
+    assert detail["snapshot_source"].startswith("Backed by product state")
+    assert len(detail["role_chips"]) == 5
+    assert [chip["role_name"] for chip in detail["role_chips"]] == [
+        "PM",
+        "CTO",
+        "Engineer",
+        "Reviewer",
+        "QA",
+    ]
+    assert all(chip["role_state"] == "idle" for chip in detail["role_chips"])
+    assert all(chip["role_state_reason"] for chip in detail["role_chips"])
+    assert all(chip["role_source_note"] for chip in detail["role_chips"])
+    assert "queue state is done" in detail["raw_status_context"].lower()
+
+
+def test_build_churnpilot_detail_marks_cached_ticket_state_when_live_github_is_unavailable(
+    tmp_path: Path, monkeypatch
+) -> None:
+    repo_root = _repo_root(tmp_path)
+    workspace_root = tmp_path / "workspace"
+
+    import framework.org_view.source_data as source_data
+
+    _write_json(
+        repo_root / "framework" / "board-review" / "PRECHECK_STATE.json",
+        {
+            "lastCheckTime": "2026-05-16T06:06:23Z",
+            "actionableIssueNumbersByRepo": {"hendrixAIDev/churn_copilot_hendrix": [223, 224]},
+            "openIssuesByRepo": {"hendrixAIDev/churn_copilot_hendrix": [223, 224]},
+        },
+    )
+
+    monkeypatch.setattr(source_data, "_workspace_root", lambda: workspace_root)
+    monkeypatch.setattr(source_data, "_fetch_open_github_issues", lambda repo: None)
+
+    detail = build_churnpilot_detail(repo_root, now=datetime(2026, 5, 16, 6, 10, tzinfo=timezone.utc))
+
+    assert detail["active_issue_count"] == 2
+    assert detail["open_actionable_ticket_count"] == 2
+    assert detail["active_issue_titles"] == []
+    assert "cached" in detail["source_fidelity_note"].lower()

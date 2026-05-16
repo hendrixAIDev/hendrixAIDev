@@ -19,6 +19,7 @@ class SourceBundle:
     state_files: List[Dict[str, Any]]
     precheck_state: Dict[str, Any]
     queue_by_product: Dict[str, Dict[str, Any]]
+    queue_sources_by_product: Dict[str, Dict[str, Any]]
     github_issues_by_repo: Optional[Dict[str, Optional[List[Dict[str, Any]]]]]
     source_banner: str
 
@@ -115,12 +116,17 @@ def load_sources(
     precheck_state = _load_json(precheck_path)
 
     queue_by_product: Dict[str, Dict[str, Any]] = {}
+    queue_sources_by_product: Dict[str, Dict[str, Any]] = {}
     used_workspace_queue = False
     for product in state_files:
         queue_path, queue_from_workspace = _queue_path(product.get("taskQueue"), repo_root, workspace_root)
         if queue_path is None:
             continue
         queue_by_product[product["slug"]] = _load_yaml(queue_path)
+        queue_sources_by_product[product["slug"]] = {
+            "path": str(queue_path),
+            "from_workspace": queue_from_workspace,
+        }
         used_workspace_queue = used_workspace_queue or queue_from_workspace
 
     github_issues_by_repo: Optional[Dict[str, Optional[List[Dict[str, Any]]]]] = {} if use_live_github else None
@@ -144,6 +150,7 @@ def load_sources(
         state_files=state_files,
         precheck_state=precheck_state,
         queue_by_product=queue_by_product,
+        queue_sources_by_product=queue_sources_by_product,
         github_issues_by_repo=github_issues_by_repo,
         source_banner=" ".join(banner_parts),
     )
