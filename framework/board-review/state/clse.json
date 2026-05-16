@@ -1,0 +1,17 @@
+{
+  "product": "CLSE",
+  "slug": "clse",
+  "sessionKey": "agent:main:cto-clse",
+  "sessionId": "a1c3afc0-fdcf-4271-9a15-ae0f7bedcca2",
+  "repos": [
+    "hendrixAIDev/character-life-sim"
+  ],
+  "primaryReadme": "projects/character-life-sim/README.md",
+  "taskQueue": null,
+  "lastRunAt": null,
+  "lastResult": "No open actionable tickets in latest precheck state.",
+  "currentBlockers": [],
+  "activeDispatches": [],
+  "handoffNotes": [],
+  "updatedBy": "main-session"
+}

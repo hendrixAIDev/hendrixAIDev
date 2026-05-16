@@ -1,0 +1,19 @@
+{
+  "product": "Personal Brand",
+  "slug": "personal-brand",
+  "sessionKey": "agent:main:cto-personal-brand",
+  "sessionId": "77713b76-a090-49ae-abf4-1240e9980787",
+  "repos": [
+    "hendrixAIDev/hendrixaidev.github.io"
+  ],
+  "primaryReadme": "projects/personal_brand/README.md",
+  "taskQueue": null,
+  "lastRunAt": null,
+  "lastResult": "No open actionable tickets in latest precheck state.",
+  "currentBlockers": [],
+  "activeDispatches": [],
+  "handoffNotes": [
+    "If site structure matters, also inspect projects/personal_brand/personal_site/README.md."
+  ],
+  "updatedBy": "main-session"
+}

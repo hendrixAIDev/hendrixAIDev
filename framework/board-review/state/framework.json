@@ -1,0 +1,31 @@
+{
+  "product": "Framework",
+  "slug": "framework",
+  "sessionKey": "agent:main:framework-cto",
+  "sessionId": "1d34ed7f-bfa9-4684-9be6-048a2a2ab8d7",
+  "repos": [
+    "hendrixAIDev/hendrixAIDev"
+  ],
+  "primaryReadme": "framework/README.md",
+  "taskQueue": "framework/plans/task_queue/tasks.yaml",
+  "lastRunAt": "2026-05-16T06:06:45Z",
+  "lastResult": "No new Framework CTO action needed. Framework #31 is open with status:in-progress, queue item fpm-20260515-003 remains in_progress, and dispatch eng-fw31-org-summary-r1 is already running. Dependent items fpm-20260515-004 and fpm-20260515-005 remain blocked until #31 returns.",
+  "currentBlockers": [],
+  "activeDispatches": [
+    {
+      "name": "eng-fw31-org-summary-r1",
+      "issue": "hendrixAIDev/hendrixAIDev#31",
+      "role": "Frontend/Full-stack Engineer",
+      "status": "running",
+      "cronId": "a452598d-f2f2-463e-a72b-23ea8cfffe29",
+      "sessionId": null,
+      "dispatchedAt": "2026-05-16T06:05:01Z",
+      "objective": "Implement the read-only org-first default summary for the MVP 1 Organization Operations Map using per-product state, queues, and GitHub issue/status-label state."
+    }
+  ],
+  "handoffNotes": [
+    "Framework queue intake must use framework/plans/task_queue/tasks.yaml, not the ChurnPilot queue.",
+    "Persistent CTO-session GitHub auth divergence has appeared before; compare against live precheck state before escalating."
+  ],
+  "updatedBy": "main-session"
+}

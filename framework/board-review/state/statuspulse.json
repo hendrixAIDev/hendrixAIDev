@@ -1,0 +1,19 @@
+{
+  "product": "StatusPulse",
+  "slug": "statuspulse",
+  "sessionKey": "agent:main:cto-statuspulse",
+  "sessionId": "1b90c3d8-1497-40ad-be99-3a75d46a8635",
+  "repos": [
+    "hendrixAIDev/statuspulse"
+  ],
+  "primaryReadme": "projects/statuspulse/README.md",
+  "taskQueue": null,
+  "lastRunAt": null,
+  "lastResult": "Open feature tickets remain blocked in the current fleet snapshot.",
+  "currentBlockers": [
+    "Feature tickets #22, #23, #24, #25, and #32 are blocked."
+  ],
+  "activeDispatches": [],
+  "handoffNotes": [],
+  "updatedBy": "main-session"
+}
