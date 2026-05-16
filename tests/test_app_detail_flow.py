@@ -166,6 +166,7 @@ def test_render_row_view_detail_sets_query_param(monkeypatch) -> None:
             "current_status_text": "No open actionable tickets.",
             "next_attention_text": "No immediate action.",
             "open_actionable_ticket_count": 0,
+            "open_actionable_ticket_text": "0",
             "detail_page_available": True,
             "source_confidence_note": "direct from current state sources",
         }
@@ -191,9 +192,11 @@ def test_render_churnpilot_detail_back_button_clears_query_param(monkeypatch) ->
             "snapshot_source": "Backed by product state.",
             "snapshot_timestamp_text": "Latest source timing: precheck 2026-05-16 06:06 UTC.",
             "active_issue_titles": [],
+            "active_issue_context_note": "Live GitHub ticket detail is unavailable, so this section only reflects cached ticket context.",
             "current_status_text": "No current status text available from product state or tickets.",
             "stage_summary_text": "Current ticket and queue state report no open actionable work.",
             "next_attention_text": "No immediate action is visible from current product and ticket state.",
+            "open_actionable_ticket_text": "unknown",
             "role_chips": [
                 {
                     "role_name": "CTO",

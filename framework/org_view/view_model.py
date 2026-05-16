@@ -133,17 +133,27 @@ def _issue_context(
     return len(actionable), titles, labels, True, False, active_numbers, len(active_numbers)
 
 
-def _current_status_text(issue_titles: List[str], queue_status: Optional[str], last_result: Optional[str]) -> str:
+def _current_status_text(
+    issue_titles: List[str],
+    queue_status: Optional[str],
+    last_result: Optional[str],
+    *,
+    sparse: bool,
+) -> str:
     if issue_titles:
         return issue_titles[0]
     if queue_status:
-        return f"Queue state is {queue_status.replace('_', ' ')}."
+        return f"Queue state currently reads {queue_status.replace('_', ' ')}."
     if last_result:
         return last_result
+    if sparse:
+        return "Snapshot row is present, but the current product state is sparse."
     return "No current status text available from product state or tickets."
 
 
-def _next_attention(stage: str) -> str:
+def _next_attention(stage: str, *, sparse: bool) -> str:
+    if sparse and stage == "Discovery":
+        return "Sparse snapshot; no stronger next step is visible from current sources."
     return {
         "Ready for CTO": "CTO should review the product's next actionable work.",
         "In execution": "Execution is in flight; next attention is the result of the active pass.",
@@ -152,11 +162,13 @@ def _next_attention(stage: str) -> str:
         "Awaiting final decision": "Final decision is the next gating step.",
         "Blocked": "Resolve the blocker before work can advance.",
         "Done": "No immediate action is visible from current product and ticket state.",
-        "Discovery": "Snapshot is too thin to name the next step confidently.",
+        "Discovery": "Current state does not expose a stronger next step confidently.",
     }[stage]
 
 
-def _stage_summary(stage: str) -> str:
+def _stage_summary(stage: str, *, sparse: bool) -> str:
+    if sparse and stage == "Discovery":
+        return "Current state is intentionally shown as sparse because no stronger structured workflow signal is available."
     return {
         "Blocked": "Current state says active work is blocked.",
         "Ready for CTO": "Current ticket or queue state indicates actionable work that likely needs CTO triage or the next dispatch.",
@@ -183,23 +195,34 @@ def _confidence_note(
     *,
     live_github: bool,
     issue_count: Optional[int],
-    used_queue: bool,
     inferred: bool,
     stale: bool,
     sparse: bool,
 ) -> str:
     notes: list[str] = []
-    if not live_github:
-        notes.append("ticket state cached")
-    if not used_queue:
-        notes.append("queue sparse")
+    if not live_github and issue_count is not None:
+        notes.append("cached tickets")
+    elif not live_github:
+        notes.append("live tickets unavailable")
     if inferred:
-        notes.append("stage inferred")
+        notes.append("inferred stage")
     if stale:
-        notes.append("state may be stale")
+        notes.append("stale")
     if sparse:
-        notes.append("snapshot thin")
-    return ", ".join(notes) if notes else "direct from current state sources"
+        notes.append("sparse")
+    return ", ".join(notes) if notes else "live sources"
+
+
+def _ticket_count_text(issue_count: Optional[int], *, live_github: bool, cached_ticket_state: bool) -> str:
+    if issue_count is None:
+        if cached_ticket_state:
+            return "unknown"
+        if not live_github:
+            return "unknown"
+        return "0"
+    if cached_ticket_state:
+        return f"~{issue_count} cached"
+    return str(issue_count)
 
 
 def _format_timestamp(value: Optional[datetime]) -> Optional[str]:
@@ -232,6 +255,53 @@ def _snapshot_source_note(bundle: Any, product_slug: str) -> str:
     if queue_source and queue_source.get("from_workspace"):
         queue_note = "queue state via workspace fallback"
     return "Backed by product state, " + queue_note + ", and GitHub issue/status-label state."
+
+
+def _active_issue_context_note(
+    *,
+    active_issue_count: int,
+    issue_titles: List[str],
+    issue_numbers: List[int],
+    live_github: bool,
+    cached_ticket_state: bool,
+) -> str:
+    if issue_titles:
+        return "Issue titles come from current actionable GitHub ticket state."
+    if issue_numbers and cached_ticket_state:
+        refs = ", ".join(f"#{number}" for number in issue_numbers)
+        return "Live actionable ticket titles are unavailable; cached issue refs are visible for context: " + refs + "."
+    if active_issue_count == 0 and live_github:
+        return "Live GitHub currently shows no open actionable issues for this product."
+    if cached_ticket_state:
+        return "Live GitHub ticket detail is unavailable, so this section only reflects cached ticket context."
+    return "No open actionable issue titles are available from current sources."
+
+
+def _source_fidelity_note(context: Dict[str, Any]) -> str:
+    fragments = [context["snapshot_source"]]
+    if context["live_github"] and context["issue_count"] is not None:
+        fragments.append("Actionable ticket counts come from live GitHub issue/status-label state.")
+    elif context["cached_ticket_state"] and context["issue_count"] is not None:
+        fragments.append(
+            "Actionable ticket counts are approximate because they come from cached precheck ticket refs rather than a live GitHub read."
+        )
+    elif context["cached_ticket_state"]:
+        fragments.append(
+            "Actionable ticket counts are unknown because only cached precheck issue refs are available and live GitHub ticket detail is unavailable."
+        )
+    else:
+        fragments.append("Actionable ticket counts are unknown where the current sources do not prove them.")
+
+    if context["inferred"]:
+        fragments.append("Normalized stage is inferred from queue or product-state signals because no direct ticket labels are available.")
+    if context["sparse"]:
+        fragments.append("Sparse rows are intentional here; blank workflow detail means the current sources do not expose stronger state.")
+    if context["stale"]:
+        fragments.append("Newest source timing is older than 24 hours, so this view may be stale.")
+
+    fragments.append("Role chips stay read-only and only become direct when an active dispatch explicitly names the role.")
+    fragments.append("Detail view is intentionally read-only.")
+    return " ".join(fragment.rstrip(".") + "." for fragment in fragments if fragment)
 
 
 def _raw_status_context(
@@ -336,13 +406,19 @@ def _role_source_note(
     active_dispatches: List[Dict[str, Any]],
     issue_labels: Set[str],
     cached_ticket_state: bool,
+    queue_status: Optional[str],
+    sparse: bool,
 ) -> str:
     if _dispatch_mentions_role(active_dispatches, role_name):
         return "Direct from the current active dispatch metadata."
     if issue_labels:
-        return "Inferred from ticket labels and shared stage mapping."
+        return "Inferred from ticket labels and shared stage mapping; this does not prove live role ownership."
     if cached_ticket_state:
-        return "Inferred from cached ticket state plus queue and product-state context."
+        return "Inferred from cached ticket refs plus queue and product-state context because live ticket labels are unavailable."
+    if queue_status:
+        return "Inferred from queue and product-state context because no direct active dispatch is present."
+    if sparse:
+        return "Sparse fallback from product-state context only; no direct dispatch, queue, or ticket signal is available."
     return "Inferred from queue and product-state context because no direct active dispatch is present."
 
 
@@ -448,6 +524,7 @@ def _product_contexts(bundle: Any, now: datetime) -> Dict[str, Dict[str, Any]]:
             "last_result": last_result,
             "blockers": blockers,
             "active_dispatches": active_dispatches,
+            "inferred": inferred,
             "stale": stale,
             "sparse": sparse,
             "stage": stage,
@@ -456,7 +533,6 @@ def _product_contexts(bundle: Any, now: datetime) -> Dict[str, Dict[str, Any]]:
             "source_confidence_note": _confidence_note(
                 live_github=live_github,
                 issue_count=issue_count,
-                used_queue=queue_data is not None,
                 inferred=inferred,
                 stale=stale,
                 sparse=sparse,
@@ -481,12 +557,17 @@ def _summary_row(context: Dict[str, Any]) -> Dict[str, Any]:
         "product_name": context["product_name"],
         "repo": context["repo"],
         "current_status_text": _current_status_text(
-            context["issue_titles"], context["queue_status"], context["last_result"]
+            context["issue_titles"], context["queue_status"], context["last_result"], sparse=context["sparse"]
         ),
         "normalized_stage_group": context["stage"],
         "actionability_signal": _actionability(context["stage"], context["sparse"]),
-        "next_attention_text": _next_attention(context["stage"]),
+        "next_attention_text": _next_attention(context["stage"], sparse=context["sparse"]),
         "open_actionable_ticket_count": context["issue_count"],
+        "open_actionable_ticket_text": _ticket_count_text(
+            context["issue_count"],
+            live_github=context["live_github"],
+            cached_ticket_state=context["cached_ticket_state"],
+        ),
         "active_issue_titles": context["issue_titles"],
         "detail_page_available": context["detail_page_available"],
         "source_confidence_note": context["source_confidence_note"],
@@ -510,14 +591,18 @@ def _churnpilot_detail(context: Optional[Dict[str, Any]]) -> Optional[Dict[str, 
                     active_dispatches=context["active_dispatches"],
                     issue_labels=context["issue_labels"],
                     cached_ticket_state=context["cached_ticket_state"],
+                    queue_status=context["queue_status"],
+                    sparse=context["sparse"],
                 ),
             }
         )
 
-    detail_status = _current_status_text(context["issue_titles"], context["queue_status"], context["last_result"])
-    fidelity_fragments = [context["source_confidence_note"]]
-    if context["detail_page_available"]:
-        fidelity_fragments.append("detail view is intentionally read-only")
+    detail_status = _current_status_text(
+        context["issue_titles"],
+        context["queue_status"],
+        context["last_result"],
+        sparse=context["sparse"],
+    )
 
     return {
         "product_key": context["product_key"],
@@ -528,15 +613,27 @@ def _churnpilot_detail(context: Optional[Dict[str, Any]]) -> Optional[Dict[str, 
         "detail_scope_label": "MVP 1 pilot detail page",
         "snapshot_source": context["snapshot_source"],
         "snapshot_timestamp_text": context["latest_timestamp_text"],
-        "source_fidelity_note": "; ".join(fragment for fragment in fidelity_fragments if fragment),
+        "source_fidelity_note": _source_fidelity_note(context),
         "active_issue_count": context["active_issue_count"],
         "active_issue_titles": context["issue_titles"],
         "active_issue_numbers": context["issue_numbers"],
+        "active_issue_context_note": _active_issue_context_note(
+            active_issue_count=context["active_issue_count"],
+            issue_titles=context["issue_titles"],
+            issue_numbers=context["issue_numbers"],
+            live_github=context["live_github"],
+            cached_ticket_state=context["cached_ticket_state"],
+        ),
         "current_status_text": detail_status,
         "normalized_stage_group": context["stage"],
-        "stage_summary_text": _stage_summary(context["stage"]),
-        "next_attention_text": _next_attention(context["stage"]),
+        "stage_summary_text": _stage_summary(context["stage"], sparse=context["sparse"]),
+        "next_attention_text": _next_attention(context["stage"], sparse=context["sparse"]),
         "open_actionable_ticket_count": context["issue_count"],
+        "open_actionable_ticket_text": _ticket_count_text(
+            context["issue_count"],
+            live_github=context["live_github"],
+            cached_ticket_state=context["cached_ticket_state"],
+        ),
         "role_chips": role_chips,
         "normalized_stage_legend": list(STAGE_LEGEND),
         "raw_status_context": context["raw_status_context"],

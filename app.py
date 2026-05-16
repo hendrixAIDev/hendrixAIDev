@@ -21,8 +21,6 @@ for module_name in _RELOAD_MODULES:
 
 def _render_row(row: dict) -> None:
     detail_label = "MVP 1 detail" if row["detail_page_available"] else "Summary only"
-    ticket_count = row["open_actionable_ticket_count"]
-    ticket_text = "n/a" if ticket_count is None else str(ticket_count)
 
     cols = st.columns([1.25, 1.15, 0.95, 1.05, 2.1, 2.0, 0.9, 1.5, 0.95], gap="small")
     cols[0].markdown("**" + str(row["product_name"]) + "**")
@@ -32,7 +30,7 @@ def _render_row(row: dict) -> None:
     cols[3].write(str(row["actionability_signal"]))
     cols[4].write(row["current_status_text"])
     cols[5].write(row["next_attention_text"])
-    cols[6].write(ticket_text)
+    cols[6].write(str(row["open_actionable_ticket_text"]))
     cols[7].write(detail_label + " · " + str(row["source_confidence_note"]))
     if row["detail_page_available"]:
         cols[8].button(
@@ -80,10 +78,8 @@ def _render_churnpilot_detail(detail: dict) -> None:
     )
 
     meta_cols = st.columns(4, gap="small")
-    ticket_count = detail["open_actionable_ticket_count"]
-    ticket_text = "n/a" if ticket_count is None else str(ticket_count)
     meta_cols[0].metric("Stage", detail["normalized_stage_group"])
-    meta_cols[1].metric("Actionable tickets", ticket_text)
+    meta_cols[1].metric("Actionable tickets", str(detail["open_actionable_ticket_text"]))
     meta_cols[2].markdown("**Repo**")
     meta_cols[2].code(str(detail["repo"]), language=None)
     meta_cols[3].markdown("**Task queue**")
@@ -100,7 +96,7 @@ def _render_churnpilot_detail(detail: dict) -> None:
         for title in detail["active_issue_titles"]:
             status_cols[0].write("- " + title)
     else:
-        status_cols[0].caption("No open actionable ChurnPilot issue titles are available from current sources.")
+        status_cols[0].caption(detail["active_issue_context_note"])
 
     status_cols[1].markdown("**Stage summary**")
     status_cols[1].write(detail["stage_summary_text"])

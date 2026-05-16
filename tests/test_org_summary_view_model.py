@@ -142,12 +142,14 @@ def test_build_org_summary_maps_stage_detail_and_sparse_confidence(tmp_path: Pat
 
     assert rows["framework"]["normalized_stage_group"] == "In execution"
     assert rows["framework"]["open_actionable_ticket_count"] == 1
+    assert rows["framework"]["open_actionable_ticket_text"] == "1"
     assert rows["framework"]["detail_page_available"] is False
     assert rows["framework"]["current_status_text"].startswith("#31 Deliver the org-first default summary")
 
     assert rows["churnpilot"]["normalized_stage_group"] == "Done"
     assert rows["churnpilot"]["actionability_signal"] == "idle"
     assert rows["churnpilot"]["detail_page_available"] is True
+    assert rows["churnpilot"]["source_confidence_note"] == "inferred stage"
 
     assert rows["statuspulse"]["normalized_stage_group"] == "Blocked"
     assert rows["statuspulse"]["actionability_signal"] == "blocked"
@@ -176,6 +178,7 @@ def test_build_churnpilot_detail_shows_all_roles_even_when_idle(tmp_path: Path, 
     assert detail["normalized_stage_group"] == "Done"
     assert detail["active_issue_count"] == 0
     assert detail["open_actionable_ticket_count"] == 0
+    assert detail["open_actionable_ticket_text"] == "0"
     assert detail["snapshot_source"].startswith("Backed by product state")
     assert len(detail["role_chips"]) == 5
     assert [chip["role_name"] for chip in detail["role_chips"]] == [
@@ -189,6 +192,8 @@ def test_build_churnpilot_detail_shows_all_roles_even_when_idle(tmp_path: Path, 
     assert all(chip["role_state_reason"] for chip in detail["role_chips"])
     assert all(chip["role_source_note"] for chip in detail["role_chips"])
     assert "queue state is done" in detail["raw_status_context"].lower()
+    assert "live github" in detail["active_issue_context_note"].lower()
+    assert "read-only" in detail["source_fidelity_note"].lower()
 
 
 def test_build_churnpilot_detail_keeps_cached_open_issue_context_out_of_actionable_counts(
@@ -214,7 +219,53 @@ def test_build_churnpilot_detail_keeps_cached_open_issue_context_out_of_actionab
 
     assert detail["active_issue_count"] == 2
     assert detail["open_actionable_ticket_count"] is None
+    assert detail["open_actionable_ticket_text"] == "unknown"
     assert detail["active_issue_titles"] == []
     assert detail["active_issue_numbers"] == [223, 224]
     assert "#223" in detail["raw_status_context"]
     assert "cached" in detail["source_fidelity_note"].lower()
+    assert "cached issue refs" in detail["active_issue_context_note"].lower()
+
+
+def test_build_org_summary_marks_sparse_rows_intentionally(tmp_path: Path, monkeypatch) -> None:
+    repo_root = _repo_root(tmp_path)
+    workspace_root = tmp_path / "workspace"
+
+    import framework.org_view.source_data as source_data
+
+    _write_json(
+        repo_root / "framework" / "board-review" / "state" / "openclaw-assistant.json",
+        {
+            "product": "OpenClaw Assistant",
+            "slug": "openclaw-assistant",
+            "repos": ["zrjaa1/openclaw-assistant"],
+            "taskQueue": None,
+            "lastRunAt": None,
+            "lastResult": None,
+            "currentBlockers": [],
+            "activeDispatches": [],
+        },
+    )
+
+    monkeypatch.setattr(source_data, "_workspace_root", lambda: workspace_root)
+    monkeypatch.setattr(
+        source_data,
+        "_fetch_open_github_issues",
+        lambda repo: {
+            "hendrixAIDev/hendrixAIDev": [],
+            "hendrixAIDev/churn_copilot_hendrix": [],
+            "hendrixAIDev/statuspulse": [],
+            "zrjaa1/openclaw-assistant": None,
+        }.get(repo),
+    )
+
+    summary = build_org_summary(repo_root, now=datetime(2026, 5, 18, 6, 10, tzinfo=timezone.utc))
+    rows = {row["product_key"]: row for row in summary["rows"]}
+
+    assert rows["openclaw-assistant"]["normalized_stage_group"] == "Discovery"
+    assert rows["openclaw-assistant"]["actionability_signal"] == "unknown"
+    assert rows["openclaw-assistant"]["open_actionable_ticket_count"] is None
+    assert rows["openclaw-assistant"]["open_actionable_ticket_text"] == "unknown"
+    assert "sparse" in rows["openclaw-assistant"]["source_confidence_note"]
+    assert "stale" in rows["openclaw-assistant"]["source_confidence_note"]
+    assert rows["openclaw-assistant"]["current_status_text"] == "Snapshot row is present, but the current product state is sparse."
