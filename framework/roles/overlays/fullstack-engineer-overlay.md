@@ -41,7 +41,7 @@ Step 4: Commit tests + implementation together
 
 ## 🚨 Pre-Submission Gates
 
-**Run these before marking `status:review`. Details in CONVENTIONS.md.**
+**Run these before returning the ticket to CTO. Details in CONVENTIONS.md.**
 
 1. **Scope check:** `git diff origin/experiment..HEAD --stat` — include output in ticket comment
 2. **Lint gate:** `ruff check --fix .` then `git diff origin/experiment..HEAD --name-only | grep '\.py$' | xargs -r ruff check` — must be empty
@@ -76,7 +76,7 @@ Step 4: Commit tests + implementation together
 
 ## ⛔ Local Verification (REQUIRED)
 
-**You MUST verify your changes against a running local server with DB before marking review-ready.**
+**You MUST verify your changes against a running local server with DB before returning the ticket to CTO.**
 
 Unit tests alone are NOT sufficient — if your change touches UI, database queries, or user-facing behavior, you must see it work.
 

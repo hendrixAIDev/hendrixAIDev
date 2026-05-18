@@ -27,11 +27,9 @@
 - **Positioning:** "We built this because we needed it. Now it's free for everyone."
 
 ## Content Workflow
-1. Engineer drafts content → `status:review`
-2. Code reviewer checks quality/accuracy → `status:verification` (or rejects)
-3. QA verifies links, screenshots, formatting → `status:cto-review`
-4. CTO approves → posts requiring CEO review get `status:needs-jj`
-5. CEO authorizes public posting (Reddit, social, etc.)
+1. Content engineer drafts content and returns the ticket to `status:new`.
+2. CTO decides whether review, QA, revision, acceptance, or CEO approval is next.
+3. Public posting still requires explicit authorization when the channel is external.
 
 ## Platform-Specific Rules
 

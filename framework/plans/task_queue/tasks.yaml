@@ -4,7 +4,7 @@ project: Framework
 project_path: framework
 repo: hendrixAIDev/hendrixAIDev
 queue_owner: framework-pm
-updated_at: '2026-05-09T21:07:00-07:00'
+updated_at: '2026-05-16T00:40:00-07:00'
 schema:
   required_fields:
     - id
@@ -52,9 +52,9 @@ tasks:
     problem_statement: The framework already coordinates products, CTO sessions, role dispatch, board-review states, GitHub tickets, and task queues, but there is no clear organization-level visualization that shows the current layer-by-product operating view. JJ wants a PM discovery pass to inspect the current framework implementation and propose a visualization where each product can show role status and pending task/ticket stage.
     expected_behavior: The Framework PM should read the current framework implementation and propose a practical organization-view visualization concept. The concept should layer by product and expose, per product, each role's status plus the stage/status of pending tasks and GitHub tickets.
     priority: high
-    status: ticketed
+    status: done
     github_issue: hendrixAIDev/hendrixAIDev#27
-    attempt_count: 0
+    attempt_count: 2
     evidence:
       - type: request
         ref: 'Slack #jj-hendrix 2026-05-09 21:07 PDT'
@@ -75,4 +75,271 @@ tasks:
       - Recommended a read-only Organization Operations Map first, with one row per product and explicit separation between PM queue stages, CTO orchestration state, and GitHub execution stages.
     cto_notes:
       - '2026-05-09 21:42 PDT - Promoted PM discovery artifact to GitHub as Framework #27 for CTO/execution intake after JJ noticed the queue item had no linked ticket.'
-    last_cto_reviewed_at: ''
+      - '2026-05-09 21:43 PDT - Dispatched backend engineering pass eng-fw27-org-map-r1 for a lightweight read-only MVP organization operations map and moved the linked GitHub ticket to status:in-progress.'
+      - '2026-05-09 21:54 PDT - Engineering handoff landed and returned the ticket to status:new. CTO advanced Framework #27 to focused code review via review-fw27-org-map-r1 and restored the linked GitHub ticket to status:in-progress.'
+      - '2026-05-09 21:59 PDT - Focused review returned request_changes for the output-path override crash and stale committed latest artifacts. CTO re-dispatched narrow backend retry eng-fw27-org-map-r2, restored the GitHub ticket to status:in-progress, and incremented the queue attempt count to 1.'
+      - '2026-05-09 22:06 PDT - Narrow engineering retry handoff landed and returned the ticket to status:new. CTO advanced Framework #27 to focused retry review via review-fw27-org-map-r2 and restored the linked GitHub ticket to status:in-progress.'
+      - "2026-05-09 22:10 PDT - Retry review approved and returned the ticket to status:new. CTO advanced Framework #27 to focused QA via qa-fw27-org-map-r1 using the repo's local-only verification workflow and restored the linked GitHub ticket to status:in-progress."
+      - '2026-05-09 22:16 PDT - QA failed because the generator still crashed in the real default workspace flow. CTO re-dispatched narrow backend retry eng-fw27-org-map-r3, restored the GitHub ticket to status:in-progress, and incremented the queue attempt count to 2.'
+      - '2026-05-09 22:23 PDT - Latest engineering retry handoff landed and returned the ticket to status:new. CTO advanced Framework #27 to focused review via review-fw27-org-map-r3 and restored the linked GitHub ticket to status:in-progress.'
+      - '2026-05-09 22:27 PDT - Focused review approved the real-workspace fix. CTO closed Framework #27, set the GitHub label to status:done, and marked this queue item done.'
+    last_cto_reviewed_at: '2026-05-09T22:27:00-07:00'
+
+  - id: fpm-20260510-001
+    created_at: '2026-05-10T14:56:00-07:00'
+    updated_at: '2026-05-15T16:01:33-07:00'
+    source: pm
+    title: Decompose the org summary plus ChurnPilot pilot view into an MVP 1 implementation backlog
+    problem_statement: >-
+      The org-view proposal now defines a clear MVP 1 shape, but JJ and CTO still do not
+      have a concrete implementation backlog for the read-only first release. Without a
+      PM follow-up that breaks the MVP into ordered execution tasks, the team risks scope
+      creep, ambiguous ownership, and accidentally pulling later analytics/retry concerns
+      into a v1 that should stay clean and focused.
+    expected_behavior: >-
+      The Framework PM should turn MVP 1 into a concrete backlog of 3-7 actionable
+      implementation tasks for the ChurnPilot pilot. The follow-up should recommend
+      execution order and dependencies, stay implementation-agnostic where appropriate,
+      and keep scope anchored to an org-wide summary plus one ChurnPilot detail page that
+      shows all active roles, reads from product state, queue state, and GitHub
+      issue/status-label state first, and remains read-only without retry/stall
+      analytics in v1.
+    priority: high
+    status: done
+    github_issue: hendrixAIDev/hendrixAIDev#28
+    attempt_count: 0
+    evidence:
+      - type: doc
+        ref: framework/plans/org-view-visualization.md
+        note: >-
+          The updated org-view plan recommends MVP 1 as a read-only JJ-facing org summary
+          above a single ChurnPilot detail page, with all active role chips visible and
+          product state, queue state, and GitHub issue/status-label state as the initial
+          source of truth.
+      - type: doc
+        ref: framework/board-review/state/README.md
+        note: >-
+          Per-product board-review state files provide durable product identity, CTO
+          handoff notes, active dispatch pointers, and recent product-level result text,
+          while GitHub labels remain authoritative for ticket actionability.
+      - type: doc
+        ref: framework/plans/task_queue/tasks.yaml
+        note: >-
+          Queue item fpm-20260509-001 captured the discovery/spec step, but there is not
+          yet a follow-up PM backlog-decomposition item that translates MVP 1 into
+          ordered implementation work.
+    pm_notes:
+      - Discovery/planning only. Do not create GitHub issues, dispatch engineering, or mutate production workflow state from this follow-up.
+      - Produce 3-7 actionable implementation tasks for MVP 1, with recommended execution order and explicit dependencies where they matter.
+      - Keep the framing implementation-agnostic where possible, but make each backlog task concrete enough for CTO intake.
+      - Preserve the v1 product direction from the org-view plan: JJ-first audience, org-wide summary first, one ChurnPilot detail page, all active roles visible, product state plus queue and GitHub issue/status-label state as the initial source of truth, read-only interaction, and no retry/stall analytics yet.
+    cto_notes:
+      - '2026-05-15 16:01 PDT - Promoted to GitHub as Framework #28 after verifying this proposed framework backlog item had been repeatedly surfaced by precheck but not consumed by the Framework CTO queue-intake path. Linked the queue item, preserved the PM framing, and added acceptance tests plus v1 scope constraints in the ticket body.'
+      - '2026-05-15 22:40 PDT - CTO accepted the completed PM backlog artifact, closed Framework #28 as done, and promoted the first dependency into Framework #29 for a field-level MVP 1 view contract dispatch.'
+    last_cto_reviewed_at: '2026-05-15T22:40:36-07:00'
+
+  - id: fpm-20260515-002
+    created_at: '2026-05-15T22:58:00-07:00'
+    updated_at: '2026-05-15T23:05:00-07:00'
+    source: pm
+    title: Stabilize the MVP 1 product-state/queue/ticket model into a documented view-model mapping
+    problem_statement: >-
+      The org-view concept and backlog now define what the first release should show, but
+      the current framework docs still do not spell out how fields from per-product state
+      files, product task queues, and GitHub issue/status-label state become stable
+      product-facing data for the org summary and ChurnPilot pilot page. Without that
+      mapping, engineers will have to infer semantics from scattered operational sources,
+      which risks inconsistent role-chip behavior, stage drift, and a UI that overstates
+      source precision.
+    expected_behavior: >-
+      Framework should define a documented translation layer from product state, queue
+      state, and GitHub issue/status-label state into the MVP 1 display model so every
+      visible field has a named source, fallback behavior, and an explicit note when the
+      output is approximate, cached, or inferred rather than authoritative live
+      orchestration state.
+    priority: high
+    status: done
+    github_issue: hendrixAIDev/hendrixAIDev#30
+    attempt_count: 0
+    evidence:
+      - type: ticket
+        ref: hendrixAIDev/hendrixAIDev#29
+        note: >-
+          Framework #29 is already handling the field-level contract, so this follow-on
+          task should focus on the source-to-view-model mapping rather than duplicating
+          the scope lock.
+      - type: doc
+        ref: framework/plans/org-view-mvp1-implementation-backlog-2026-05-15.md
+        note: >-
+          Backlog item 2 calls for a documented mapping from product state, queue state,
+          and GitHub issue/status-label state into the org summary and ChurnPilot detail
+          display model, including role-state inference and normalized work-stage grouping.
+      - type: doc
+        ref: framework/board-review/state/README.md
+        note: >-
+          Product state files are durable CTO continuity artifacts while GitHub labels
+          decide ticket actionability, so the UI needs a documented adapter instead of
+          treating the fleet status snapshot as backing data.
+    pm_notes:
+      - >-
+        This is the first follow-on item after the active MVP 1 contract ticket. Keep the
+        task implementation-agnostic and focused on making the source semantics honest and
+        stable for the v1 UI.
+    cto_notes:
+      - '2026-05-15 22:49 PDT - CTO accepted Framework #29 view contract, promoted this mapping task to Framework #30, and dispatched eng-fw30-view-model-mapping-r1.'
+      - '2026-05-15 23:04 PDT - CTO accepted the corrected view-model mapping artifact, closed Framework #30 as done, and promoted the next dependency into Framework #31 for org-summary UI implementation.'
+    last_cto_reviewed_at: '2026-05-15T23:04:37-07:00'
+
+  - id: fpm-20260515-003
+    created_at: '2026-05-15T22:58:00-07:00'
+    updated_at: '2026-05-15T23:35:00-07:00'
+    source: pm
+    title: Deliver an org-first default summary that makes fleet state scannable
+    problem_statement: >-
+      The Framework product promise now centers on an Organization Operations Map, but the
+      current artifacts remain document-heavy and do not yet offer a default org-level
+      summary that JJ can scan quickly across products. Without that first surface, users
+      still have to read planning docs or raw status files to understand which product
+      needs attention, which weakens the core value of the proposed operating view.
+    expected_behavior: >-
+      Framework should ship a default org-wide summary view that presents each tracked
+      product in a concise, legible row with product identity, current status, actionability
+      signal, and a clear indication that only ChurnPilot has an MVP 1 deep-dive page.
+    priority: high
+    status: done
+    github_issue: hendrixAIDev/hendrixAIDev#31
+    attempt_count: 0
+    evidence:
+      - type: doc
+        ref: framework/plans/org-view-visualization.md
+        note: >-
+          The original PM proposal recommends a product-layered board where rows equal
+          products and the primary value is at-a-glance visibility into role state, work
+          stage, and next attention.
+      - type: doc
+        ref: framework/plans/org-view-mvp1-implementation-backlog-2026-05-15.md
+        note: >-
+          Backlog item 3 defines the org-wide summary as the default landing surface and
+          requires all tracked products to render gracefully even when detail is sparse.
+      - type: doc
+        ref: framework/board-review/state/README.md
+        note: >-
+          Per-product state files enumerate tracked products and their owned repositories,
+          but they still need a purpose-built scannable product interface layered with
+          queue and GitHub ticket state.
+    pm_notes:
+      - >-
+        Keep this centered on the org-first reading experience. The value is fast
+        cross-product comprehension, not a generic dashboard or control surface.
+    cto_notes:
+      - '2026-05-15 22:49 PDT - Blocked from automatic promotion until Framework #30 completes the source-to-view-model mapping that this UI task depends on.'
+      - '2026-05-15 23:05 PDT - Framework #30 completed the accepted mapping dependency. CTO promoted this task to Framework #31 and dispatched eng-fw31-org-summary-r1 for the read-only org-first MVP 1 summary implementation.'
+      - '2026-05-15 23:21 PDT - Engineer returned implementation in /tmp/wt/hendrixAIDev-31 on branch fix/hendrixAIDev-31. CTO advanced Framework #31 to focused code review via review-fw31-org-summary-r1.'
+      - '2026-05-15 23:27 PDT - Code review approved Framework #31. CTO advanced #31 to local QA via qa-fw31-org-summary-r1.'
+      - '2026-05-15 23:34 PDT - QA passed Framework #31. CTO accepted and closed #31 as done, pushed the accepted implementation to origin/experiment, and promoted the next dependent ChurnPilot detail task.'
+    last_cto_reviewed_at: '2026-05-15T23:34:52-07:00'
+
+  - id: fpm-20260515-004
+    created_at: '2026-05-15T22:58:00-07:00'
+    updated_at: '2026-05-16T00:22:00-07:00'
+    source: pm
+    title: Expose the full ChurnPilot pilot detail view with all five role states visible
+    problem_statement: >-
+      MVP 1 is supposed to prove the organization-view model through one concrete product
+      deep dive, but there is still no queued follow-on work item that frames the missing
+      ChurnPilot pilot detail experience from the user's perspective. Without that detail
+      page, the org summary cannot validate whether the proposed role vocabulary and
+      normalized stage framing actually help JJ understand one product in depth.
+    expected_behavior: >-
+      Framework should provide a read-only ChurnPilot detail page that expands the org
+      summary into product metadata, active issue context, normalized work-stage framing,
+      and visible PM, CTO, Engineer, Reviewer, and QA role chips even when some roles are
+      idle.
+    priority: high
+    status: done
+    github_issue: hendrixAIDev/hendrixAIDev#32
+    attempt_count: 1
+    evidence:
+      - type: doc
+        ref: framework/plans/org-view-visualization.md
+        note: >-
+          The recommended MVP 1 shape is an org-wide summary followed by one ChurnPilot
+          detail page with all active role chips visible for the pilot product.
+      - type: doc
+        ref: framework/plans/org-view-mvp1-implementation-backlog-2026-05-15.md
+        note: >-
+          Backlog item 4 defines the pilot detail page as the place where active issue
+          context, normalized work-stage framing, and all five role chips become visible
+          together in one read-only product view.
+      - type: ticket
+        ref: hendrixAIDev/hendrixAIDev#29
+        note: >-
+          The contract ticket in progress should lock what fields belong on this page, but
+          the detail experience itself still needs separate follow-on intake once that
+          contract is complete.
+    pm_notes:
+      - >-
+        This task should stay tightly scoped to the single ChurnPilot pilot page. Do not
+        broaden it into multi-product deep-detail work during MVP 1.
+    cto_notes:
+      - '2026-05-15 22:49 PDT - Blocked from automatic promotion until the MVP 1 contract and source-to-view-model mapping are accepted.'
+      - '2026-05-15 23:35 PDT - Framework #31 org-summary implementation passed QA and was pushed to origin/experiment. CTO promoted this ChurnPilot detail task to Framework #32 and dispatched eng-fw32-churnpilot-detail-r1.'
+      - '2026-05-15 23:48 PDT - Engineer returned implementation in /tmp/wt/hendrixAIDev-32 on branch fix/hendrixAIDev-32. CTO advanced Framework #32 to focused code review via review-fw32-churnpilot-detail-r1.'
+      - '2026-05-15 23:54 PDT - Code review requested changes for cached open-issue/actionable-count separation and app-layer query-param detail-flow coverage. CTO re-dispatched narrow frontend retry eng-fw32-churnpilot-detail-r2 and incremented attempt_count to 1.'
+      - '2026-05-16 00:07 PDT - Engineer returned the narrow retry with cached issue-count split and app-layer detail-flow tests. CTO advanced Framework #32 to focused re-review via review-fw32-churnpilot-detail-r2.'
+      - '2026-05-16 00:13 PDT - Re-review approved Framework #32. CTO advanced #32 to local QA via qa-fw32-churnpilot-detail-r1.'
+      - '2026-05-16 00:22 PDT - QA passed Framework #32. CTO accepted and closed #32 as done, pushed approved work to origin/experiment, and promoted the final provenance task.'
+    last_cto_reviewed_at: '2026-05-16T00:22:16-07:00'
+
+  - id: fpm-20260515-005
+    created_at: '2026-05-15T22:58:00-07:00'
+    updated_at: '2026-05-16T00:58:13-07:00'
+    source: pm
+    title: Make MVP 1 honest about stale, sparse, and approximate source state
+    problem_statement: >-
+      The current v1 source set mixes product state files, task queues, GitHub/precheck
+      ticket state, and optional human-facing context, yet the planned UI still lacks a
+      queued product task for showing provenance, refresh timing, and intentional empty
+      states. If that transparency work is skipped, users may over-trust inferred role or
+      stage output and misread sparse products as broken rather than intentionally under-
+      detailed.
+    expected_behavior: >-
+      Framework should present source provenance, last-refresh context, and clear
+      empty/approximate-state messaging anywhere MVP 1 displays inferred board-review data,
+      so JJ can tell what is live GitHub truth, what is cached/local state, what is
+      approximate, and what simply has no deeper detail yet.
+    priority: medium
+    status: done
+    github_issue: hendrixAIDev/hendrixAIDev#34
+    attempt_count: 1
+    evidence:
+      - type: doc
+        ref: framework/board-review/state/README.md
+        note: >-
+          Product state files, precheck state, task queues, and GitHub labels each have
+          different authority boundaries, so the UI needs explicit framing to avoid
+          overstating confidence.
+      - type: doc
+        ref: framework/plans/org-view-mvp1-implementation-backlog-2026-05-15.md
+        note: >-
+          Backlog item 5 calls for source-state transparency, last-refresh context, and
+          graceful handling of empty or approximate product states before MVP 1 is trusted.
+      - type: doc
+        ref: framework/board-review/state/framework.md
+        note: >-
+          The live Framework state already tracks dispatch timing and recent result text,
+          which highlights the broader trust question of how stale or partial state should
+          be represented to users in a read-only operations view.
+    pm_notes:
+      - >-
+        Treat this as a user-trust task, not polish. The first release should be explicit
+        about what it knows and what it is inferring from cached or local source state.
+    cto_notes:
+      - '2026-05-15 22:49 PDT - Blocked from automatic promotion until the first UI surfaces exist, because provenance and sparse-state handling should attach to the implemented view shape.'
+      - '2026-05-16 00:22 PDT - Framework #31 and #32 completed the required UI surfaces. CTO promoted this provenance/sparse-state task to Framework #34 and dispatched eng-fw34-provenance-r1.'
+      - '2026-05-16 00:34 PDT - Engineer returned implementation in /tmp/wt/hendrixAIDev-34 on branch fix/hendrixAIDev-34. CTO advanced Framework #34 to focused code review via review-fw34-provenance-r1.'
+      - '2026-05-16 00:40 PDT - Code review requested one narrow fix: active issue provenance must remain visible when live titles exist. CTO re-dispatched eng-fw34-provenance-r2 and incremented attempt_count to 1.'
+      - '2026-05-16 00:49 PDT - Engineer returned retry commit 4901b29 with the active-issue provenance render fix and app-layer regression coverage. CTO advanced Framework #34 to focused retry code review via review-fw34-provenance-r2.'
+      - '2026-05-16 00:52 PDT - Retry code review approved commit 4901b29. CTO advanced Framework #34 to local QA via qa-fw34-provenance-r1 with explicit no-merge/no-push/no-worktree-removal instructions.'
+      - '2026-05-16 00:58 PDT - Local QA passed Framework #34. CTO accepted commit 4901b2902aa1b4f21c21e53b0175f9324390b06a, pushed it to origin/experiment, closed #34 as status:done, and marked this queue item done.'
+    last_cto_reviewed_at: '2026-05-16T00:58:13-07:00'
