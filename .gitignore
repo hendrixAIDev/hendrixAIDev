@@ -8,22 +8,23 @@ __pycache__/
 
 # OS
 .DS_Store
+
 # Runtime/generated framework artifacts
-framework/board-review/logs/
-framework/board-review/runlocks/
-framework/board-review/PRECHECK_STATE.json
-framework/board-review/PRECHECK_FAILURE_STATE.json
-framework/board-review/BOARD_REVIEW_STATUS.md
-framework/board-review/state/
-framework/dspy/.venv/
-framework/dspy/__pycache__/
+board-review/logs/
+board-review/runlocks/
+board-review/PRECHECK_STATE.json
+board-review/PRECHECK_FAILURE_STATE.json
+board-review/BOARD_REVIEW_STATUS.md
+board-review/state/
+!board-review/state/README.md
+dspy/.venv/
+dspy/__pycache__/
 skills/**/.venv/
-framework/PROJECTS.md
+PROJECTS.md
 
 # Components that are not ready to share yet
-framework/evolver/
-framework/dspy
-framework/knowledge
-framework/metrics
-framework/plans
-!framework/board-review/state/README.md
+evolver/
+dspy
+knowledge
+metrics
+plans
