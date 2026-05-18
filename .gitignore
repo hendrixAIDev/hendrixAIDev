@@ -14,6 +14,7 @@ framework/board-review/runlocks/
 framework/board-review/PRECHECK_STATE.json
 framework/board-review/PRECHECK_FAILURE_STATE.json
 framework/board-review/BOARD_REVIEW_STATUS.md
+framework/board-review/state/
 framework/dspy/.venv/
 framework/dspy/__pycache__/
 skills/**/.venv/
@@ -25,3 +26,4 @@ framework/dspy
 framework/knowledge
 framework/metrics
 framework/plans
+!framework/board-review/state/README.md
