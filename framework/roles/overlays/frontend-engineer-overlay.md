@@ -91,7 +91,7 @@ bash skills/code-nav/scripts/code-nav.sh names src/ --type class              # 
 
 ## ⛔ Local DB Verification (REQUIRED)
 
-**You MUST verify your changes against a running local server with DB before marking review-ready.**
+**You MUST verify your changes against a running local server with DB before returning the ticket to CTO.**
 
 Unit tests alone are NOT sufficient — if your change touches UI or user-facing behavior, you must see it work in the running app.
 

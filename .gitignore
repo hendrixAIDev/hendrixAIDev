@@ -1,11 +1,3 @@
-# Runtime state
-framework/board-review/PRECHECK_STATE.json
-framework/board-review/BOARD_REVIEW_STATUS.md
-
-# Evolver sensitive
-framework/evolver/node_id.txt
-framework/evolver/sandbox/
-
 # Python
 __pycache__/
 *.pyc
@@ -19,7 +11,19 @@ __pycache__/
 # Runtime/generated framework artifacts
 framework/board-review/logs/
 framework/board-review/runlocks/
+framework/board-review/PRECHECK_STATE.json
 framework/board-review/PRECHECK_FAILURE_STATE.json
+framework/board-review/BOARD_REVIEW_STATUS.md
+framework/board-review/state/
 framework/dspy/.venv/
 framework/dspy/__pycache__/
 skills/**/.venv/
+framework/PROJECTS.md
+
+# Components that are not ready to share yet
+framework/evolver/
+framework/dspy
+framework/knowledge
+framework/metrics
+framework/plans
+!framework/board-review/state/README.md

@@ -196,18 +196,18 @@ Use these for:
 - persistent CTO session mapping
 - workflow semantics
 
-### Live pipeline summary
-- `framework/board-review/BOARD_REVIEW_STATUS.md`
+### Human-facing fleet summary
 
 Use this for:
-- active issues by repo
-- recently closed issues
-- current board-review notes
-- active sub-agents summary
+- context/history only
+- human-readable fleet notes
+- optional provenance links
+
+Do not use this for ticket actionability, role state, active-work counts, or product continuity state.
 
 ### Product state artifacts
 - `framework/board-review/state/README.md`
-- future `framework/board-review/state/<product>.*`
+- `framework/board-review/state/<product>.md`
 
 Use these for:
 - compact per-product durable state
@@ -236,20 +236,23 @@ Use this for:
 
 ## Suggested MVP slices
 
-### MVP 1 — Static data-backed dashboard spec
-Goal: prove the model using files only.
+### MVP 1 — ChurnPilot pilot detail page with org summary
+Goal: prove the model in a read-only JJ-facing view using per-product state files, product task queues, and GitHub issue/status-label state as the initial source of truth.
 
-Show for each product:
-- product summary
+Show:
+- a compact org-wide summary above the fold
+- a ChurnPilot detail page as the pilot product
+- product summary for ChurnPilot
 - open actionable ticket count
 - active issue titles
-- role chips inferred from ticket/queue state
-- queue counts by stage
+- all active role chips inferred from current board-review state
+- queue/ticket stage summary using the normalized stage groups
 
 Why first:
-- lowest implementation risk
-- no need to parse session logs yet
-- enough to validate whether the mental model feels right
+- matches JJ's preferred viewing mode: org-wide summary first, then one product detail page
+- keeps the first release read-only and clean
+- uses the existing product state, queue, and ticket model before introducing deeper runlog/session reconciliation
+- limits scope by piloting on ChurnPilot before going cross-product
 
 ### MVP 2 — Active CTO session awareness
 Add:
@@ -261,15 +264,14 @@ Add:
 Why second:
 - this is where the org view becomes operational instead of just descriptive
 
-### MVP 3 — Layered drill-down per product
-Add expandable detail:
-- role lane details
-- queue item list
-- active GitHub tickets with stage chips
-- recent board-review note excerpt
+### MVP 3 — Cross-product expansion
+Add:
+- the same summary/detail model for all mapped products
+- consistent product switching between product detail views
+- clearer per-product role and stage comparisons from the org-wide summary
 
 Why third:
-- turns the view into a practical control surface for JJ/CTO review
+- proves the model on ChurnPilot first before scaling it across the whole organization
 
 ### MVP 4 — Timeline / flow analytics
 Later, add:
@@ -283,27 +285,28 @@ Why this matters:
 
 ---
 
-## Open questions for CTO/JJ
+## Resolved product direction (JJ answers)
 
-1. **Primary audience:** Is this mostly for JJ as a business/control view, or for CTO operations first?
-2. **Single board vs drill-down:** Should the first version optimize for one scannable board, or for one product detail page with org-wide summary above it?
-3. **Role granularity:** Should the org view show only PM / CTO / Engineer / Review / QA, or also specialized roles like Product Readiness Auditor and Trust & Risk Auditor?
-4. **Source of truth preference:** Should board state come primarily from `BOARD_REVIEW_STATUS.md`, or should a future implementation read GitHub + queue files directly and treat the status doc as derived?
-5. **Framework-only vs cross-product:** Should Framework be the pilot product first, or should the visualization ship only when it can show all mapped products together?
-6. **Stall visibility:** Do JJ/CTO want retry-loop and watchdog-reset visibility in the first version, or should MVP stay cleaner and only show current state?
-7. **Interaction model:** Should this remain a planning/dashboard artifact, or should the long-term design include actions like “open ticket,” “open queue item,” or “wake CTO”? My recommendation is **read-only first**.
+1. **Primary audience:** JJ first. This should optimize for a business/control view before deeper CTO operations use.
+2. **Initial information architecture:** one product detail page with an org-wide summary above it, rather than a single flat board-only experience.
+3. **Role granularity:** show all active roles, not only PM / CTO / Engineer / Review / QA.
+4. **Initial source of truth:** start from per-product state files, product task queues, and GitHub issue/status-label state.
+5. **Pilot product:** use ChurnPilot as the first pilot product.
+6. **Stall visibility in v1:** keep MVP clean and focused on current state; defer retry-loop and watchdog-reset visibility.
+7. **Interaction model:** read-only first.
 
 ---
 
 ## Recommendation
 
-I recommend a **read-only layered org board** as the first implementation target:
-- **one row per product**
-- **role chips in the middle**
-- **queue/ticket stage summary on the right**
-- **next attention item pinned at the edge**
+I recommend a **read-only JJ-facing org summary + ChurnPilot detail view** as the first implementation target:
+- **org-wide summary first** for quick business/control scanning
+- **one ChurnPilot detail page** as the pilot product view
+- **all active role chips** visible for the pilot product
+- **queue/ticket stage summary** based on normalized stages
+- **current-state clarity over workflow diagnostics** in v1
 
-That matches the framework’s actual architecture today: products are the top-level unit, CTO sessions are product-bound, roles are pass-based, and work moves through queue + GitHub stages rather than a single monolithic backlog.
+That matches JJ's stated preferences while still fitting the framework’s actual architecture today: products are the top-level unit, CTO sessions are product-bound, roles are pass-based, and work moves through queue + GitHub stages rather than a single monolithic backlog.
 
 The main thing to avoid is a generic kanban that loses the distinction between:
 - PM discovery backlog
@@ -311,4 +314,4 @@ The main thing to avoid is a generic kanban that loses the distinction between:
 - active execution roles
 - GitHub ticket stage
 
-That distinction is the real shape of the current system, and the visualization should make it obvious.
+That distinction is the real shape of the current system, and the visualization should make it obvious even in a more JJ-friendly summary/detail presentation.

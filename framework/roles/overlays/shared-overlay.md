@@ -27,7 +27,8 @@
 - **⚠️ CRITICAL — `/~/+/` path for Streamlit Cloud only:** `agent-browser open https://app.streamlit.app/~/+/` — NOT the bare domain. The root URL loads a Streamlit Cloud wrapper with a cross-origin iframe — `snapshot` returns only 2 elements. `/~/+/` goes straight to the app. **For localhost, do NOT use `/~/+/`** — just `http://localhost:8501` (there's no iframe wrapper locally).
 - **⚠️ Sleeping apps — 303 redirect to auth is NOT an auth issue:** Streamlit Cloud free tier hibernates apps after ~7 days of no traffic. When sleeping, ALL requests (including `/_stcore/health`) return HTTP 303 → `share.streamlit.io/-/auth/app`. This looks like auth but is actually a sleep redirect. Fix: navigate to the app URL with `agent-browser`, look for a "Wake app" button in the snapshot, click it, then wait 30–60s for boot before testing. If it persists, reboot the app from Streamlit Cloud dashboard.
 - **Auth:** Use `agent-browser auth login churnpilot-qa` (credentials pre-saved on host). No need to fill login forms manually.
-- **Session isolation:** Set `export AGENT_BROWSER_SESSION=agent1` once at the top of your script — all subsequent commands inherit it automatically.
+- **Session isolation:** Set a unique `AGENT_BROWSER_SESSION` once at the top of your script — for example `agent1`, `agent2`, or `qa-240`. Do not assume `agent1` is free when parallel agents may run.
+- **Evidence priority:** For Streamlit QA, prefer screenshot evidence plus `agent-browser snapshot` output over raw body-text dumps. Text dumps can include wrapper/CSS/comment noise and are best treated as secondary debugging evidence.
 - **Cleanup:** Always `agent-browser close` when done — instant, no hanging processes.
 
 ---
@@ -57,14 +58,13 @@ See `framework/PROJECTS.md`
 - StatusPulse: https://github.com/hendrixAIDev/statuspulse
 - CharacterLifeSim: https://github.com/hendrixAIDev/character-life-sim
 
-**Update issues via CLI:**
+**Comment on issues via CLI:**
 ```bash
 # Add comment
 gh issue comment 42 --repo hendrixAIDev/[repo] --body "..."
-
-# Update labels
-gh issue edit 42 --repo hendrixAIDev/[repo] --add-label "status:in-progress"
 ```
+
+For status labels, exit requirements, and closure rules, follow `framework/board-review/TICKET_SYSTEM.md`.
 
 ---
 
@@ -97,7 +97,7 @@ gh issue edit 42 --repo hendrixAIDev/[repo] --add-label "status:in-progress"
 
 ### Communication
 - Document work in GitHub issue comments
-- Update labels when status changes
+- Return tickets according to `framework/board-review/TICKET_SYSTEM.md`
 - Be explicit about what you did and didn't do
 
 ---

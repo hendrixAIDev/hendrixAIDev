@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Board Review Org Diagram</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --line: #475569;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #60a5fa;
+      --accent-2: #34d399;
+      --warn: #f59e0b;
+      --pink: #f472b6;
+      --card-shadow: 0 16px 40px rgba(0,0,0,.28);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #020617 0%, #0f172a 100%);
+      color: var(--text);
+    }
+    .app {
+      display: grid;
+      grid-template-columns: minmax(820px, 1fr) 360px;
+      min-height: 100vh;
+    }
+    .canvas {
+      position: relative;
+      padding: 20px;
+      overflow: auto;
+    }
+    .topbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .title-wrap h1 {
+      margin: 0 0 4px;
+      font-size: 24px;
+    }
+    .title-wrap p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 880px;
+      font-size: 14px;
+    }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      border: 1px solid #334155;
+      background: #111827;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font: inherit;
+    }
+    button:hover { border-color: var(--accent); }
+    .board {
+      position: relative;
+      width: 1500px;
+      height: 980px;
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at top left, rgba(96,165,250,.10), transparent 20%),
+        radial-gradient(circle at bottom right, rgba(52,211,153,.08), transparent 20%),
+        rgba(15,23,42,.75);
+      border: 1px solid rgba(148,163,184,.15);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04), var(--card-shadow);
+      overflow: hidden;
+    }
+    .swimlane {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 25%;
+      border-right: 1px dashed rgba(148,163,184,.15);
+      padding: 16px;
+      color: rgba(148,163,184,.75);
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .swimlane:last-of-type { border-right: 0; }
+    .lane1 { left: 0; }
+    .lane2 { left: 25%; }
+    .lane3 { left: 50%; }
+    .lane4 { left: 75%; }
+    svg#wires {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .node {
+      position: absolute;
+      width: 250px;
+      min-height: 120px;
+      background: linear-gradient(180deg, rgba(31,41,55,.96), rgba(17,24,39,.96));
+      border: 1px solid rgba(148,163,184,.18);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--card-shadow);
+      cursor: pointer;
+      transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+    }
+    .node:hover, .node.active {
+      transform: translateY(-2px);
+      border-color: rgba(96,165,250,.75);
+      box-shadow: 0 20px 44px rgba(0,0,0,.32);
+    }
+    .node h3 {
+      margin: 0 0 6px;
+      font-size: 17px;
+      line-height: 1.2;
+    }
+    .node .type {
+      display: inline-block;
+      margin-bottom: 8px;
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #cbd5e1;
+      background: rgba(71,85,105,.35);
+      padding: 4px 8px;
+      border-radius: 999px;
+    }
+    .node p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .node .badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      min-width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: rgba(245,158,11,.16);
+      color: #fde68a;
+      font-size: 12px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(245,158,11,.35);
+      padding: 0 7px;
+    }
+    .node.has-note .badge { display: flex; }
+    .blue { border-color: rgba(96,165,250,.35); }
+    .green { border-color: rgba(52,211,153,.35); }
+    .pink { border-color: rgba(244,114,182,.35); }
+    .amber { border-color: rgba(245,158,11,.35); }
+    .purple { border-color: rgba(168,85,247,.35); }
+    .small { width: 220px; min-height: 96px; }
+    .wide { width: 310px; }
+    .legend {
+      position: absolute;
+      left: 24px;
+      bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      max-width: 900px;
+    }
+    .legend span {
+      background: rgba(15,23,42,.78);
+      border: 1px solid rgba(148,163,184,.14);
+      color: var(--muted);
+      border-radius: 999px;
+      font-size: 12px;
+      padding: 7px 10px;
+    }
+    .sidebar {
+      border-left: 1px solid rgba(148,163,184,.12);
+      background: rgba(2,6,23,.72);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .panel {
+      background: rgba(17,24,39,.9);
+      border: 1px solid rgba(148,163,184,.12);
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .panel h2, .panel h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+    .panel p, .panel li {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .panel ul { padding-left: 18px; margin: 8px 0 0; }
+    label {
+      display: block;
+      font-size: 12px;
+      color: #cbd5e1;
+      margin: 12px 0 6px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    input, textarea {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+    }
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+    .hint { color: var(--muted); font-size: 12px; }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      background: rgba(52,211,153,.12);
+      color: #a7f3d0;
+      border: 1px solid rgba(52,211,153,.26);
+    }
+    .status-pill::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent-2);
+    }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="canvas">
+      <div class="topbar">
+        <div class="title-wrap">
+          <h1>Current Org / Board-Review Map</h1>
+          <p>Interactive sketch of the PM → CTO → isolated sub-agent pipeline, based on the current workspace docs. Click any box to edit the title, summary, or notes. Your changes autosave locally in the browser.</p>
+        </div>
+        <div class="actions">
+          <button id="exportBtn">Export JSON</button>
+          <button id="importBtn">Import JSON</button>
+          <button id="resetBtn">Reset diagram</button>
+        </div>
+      </div>
+
+      <div class="board" id="board">
+        <div class="swimlane lane1">Discovery / Intake</div>
+        <div class="swimlane lane2">CTO Control</div>
+        <div class="swimlane lane3">Execution</div>
+        <div class="swimlane lane4">Validation / Closeout</div>
+        <svg id="wires" viewBox="0 0 1500 980" preserveAspectRatio="none">
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L9,3 z" fill="#64748b"></path>
+            </marker>
+          </defs>
+        </svg>
+
+        <div class="node blue wide" id="jj" style="left:40px;top:70px;">
+          <div class="badge"></div>
+          <div class="type">CEO / Human</div>
+          <h3>CEO</h3>
+          <p>Provides strategy, priorities, and final main-branch approval.</p>
+        </div>
+
+        <div class="node green" id="pm" style="left:90px;top:280px;">
+          <div class="badge"></div>
+          <div class="type">On-demand PM Agent</div>
+          <h3>PM Agent</h3>
+          <p>Reads specs, journeys, and docs; writes product discovery into a project-local task queue rather than directly executing GitHub implementation work.</p>
+        </div>
+
+        <div class="node green" id="queue" style="left:90px;top:500px;">
+          <div class="badge"></div>
+          <div class="type">Project Queue</div>
+          <h3>Task Queue YAML</h3>
+          <p>PM-owned framing: title, problem statement, expected behavior, source, evidence, PM notes. CTO later promotes good items into GitHub issues.</p>
+        </div>
+
+        <div class="node amber wide" id="precheck" style="left:430px;top:72px;">
+          <div class="badge"></div>
+          <div class="type">Automation Trigger</div>
+          <h3>Precheck / Watchdog</h3>
+          <p>OS level cronjob: Runs on repo activity and stale-ticket checks, then wakes the matching persistent product CTO session. Also resets long-stuck in-progress tickets back to <span class="mono">status:new</span>.</p>
+        </div>
+
+        <div class="node blue wide" id="cto" style="left:470px;top:290px;">
+          <div class="badge"></div>
+          <div class="type">Persistent Product CTO Session</div>
+          <h3>CTO Session per product</h3>
+          <p>Owns triage, planning, acceptance tests, role choice, queue intake, dispatch decisions, status transitions, final closeout, and escalation to <span class="mono">status:needs-jj</span>.</p>
+        </div>
+
+        <div class="node blue" id="issues" style="left:500px;top:540px;">
+          <div class="badge"></div>
+          <div class="type">GitHub Source of Truth</div>
+          <h3>GitHub Issues + Labels</h3>
+          <p>1. Operational state lives on the issue, the source of truth of the working item status. 2. Work hand offs. 3. Artifact for Retrospective.</p>
+        </div>
+
+        <div class="node pink wide" id="eng" style="left:840px;top:150px;">
+          <div class="badge"></div>
+          <div class="type">Isolated Workers</div>
+          <h3>Workers</h3>
+          <p>One-shot isolated runs for implementation, review, and QA. They operate in isolated git worktrees, usually based on <span class="mono">origin/experiment</span>, and report back through the issue lifecycle.</p>
+        </div>
+
+        <div class="node pink small" id="review" style="left:1090px;top:170px;">
+          <div class="badge"></div>
+          <div class="type">Isolated Worker</div>
+          <h3>Code Reviewer</h3>
+          <p>Reviews the same worktree, checks handoff quality, scope, tests, and either approves or kicks it back to <span class="mono">status:new</span>.</p>
+        </div>
+
+        <div class="node pink wide" id="qa" style="left:1030px;top:460px;">
+          <div class="badge"></div>
+          <div class="type">Isolated Worker</div>
+          <h3>QA / Validation</h3>
+          <p>Merges approved worktree into <span class="mono">experiment</span>, tests the deployed environment, then removes the worktree and reports pass/fail. JJ alone approves the eventual move from <span class="mono">experiment</span> to <span class="mono">main</span>.</p>
+        </div>
+
+        <div class="node amber small" id="closeout" style="left:850px;top:720px;">
+          <div class="badge"></div>
+          <div class="type">CTO Decision</div>
+          <h3>CTO Close / Escalate</h3>
+          <p>After validation evidence exists, CTO closes the issue as <span class="mono">status:done</span>, or escalates / blocks if retries are exhausted or a CEO call is needed.</p>
+        </div>
+
+        <div class="legend">
+          <span>Blue = coordination / control</span>
+          <span>Green = product discovery</span>
+          <span>Pink = isolated execution roles</span>
+          <span>Amber = automation / escalation</span>
+        </div>
+      </div>
+    </div>
+
+    <aside class="sidebar">
+      <div class="panel">
+        <div class="status-pill">Autosaves in browser</div>
+        <h2 id="inspectorTitle" style="margin-top:12px;">Select a box</h2>
+        <p id="inspectorLead">Click any node on the left to edit what it says or attach notes for our discussion.</p>
+        <label for="nodeTitle">Title</label>
+        <input id="nodeTitle" placeholder="Node title" />
+        <label for="nodeSummary">Summary</label>
+        <textarea id="nodeSummary" placeholder="Short summary shown on the card"></textarea>
+        <label for="nodeNotes">Discussion notes / comments</label>
+        <textarea id="nodeNotes" placeholder="Use this area for questions, concerns, TODOs, or changes you want to discuss."></textarea>
+      </div>
+
+      <div class="panel">
+        <h3>Global notes</h3>
+        <textarea id="globalNotes" placeholder="Big-picture notes for the whole diagram..."></textarea>
+        <p class="hint">Tip: hit <span class="mono">Export JSON</span>, paste it into chat, and I can update the structure or turn your notes into a cleaner next version.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Current reading of the system</h3>
+        <ul>
+          <li>PM does discovery into a queue, not direct implementation.</li>
+          <li>The product CTO session is persistent and gets re-woken by precheck/watchdog.</li>
+          <li>CTO dispatches isolated one-shot workers for implementation, review, and QA.</li>
+          <li>Engineers / reviewers / QA share the isolated worktree lifecycle, then QA validates on <span class="mono">experiment</span>.</li>
+          <li>CTO is the traffic cop and final closer; JJ remains the strategic decider and production approver.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'board-review-org-diagram-v2';
+    const nodeIds = ['jj','pm','queue','precheck','cto','issues','eng','review','qa','closeout'];
+    const defaultState = {
+      nodes: {},
+      globalNotes: ''
+    };
+
+    function seedDefaults() {
+      nodeIds.forEach(id => {
+        const el = document.getElementById(id);
+        defaultState.nodes[id] = {
+          title: el.querySelector('h3').textContent,
+          summary: el.querySelector('p').innerHTML,
+          notes: ''
+        };
+      });
+    }
+    seedDefaults();
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(defaultState);
+        const parsed = JSON.parse(raw);
+        return {
+          nodes: { ...structuredClone(defaultState).nodes, ...(parsed.nodes || {}) },
+          globalNotes: parsed.globalNotes || ''
+        };
+      } catch {
+        return structuredClone(defaultState);
+      }
+    }
+
+    let state = loadState();
+    let activeId = null;
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state, null, 2));
+      renderNodes();
+    }
+
+    function renderNodes() {
+      nodeIds.forEach(id => {
+        const data = state.nodes[id];
+        const el = document.getElementById(id);
+        el.querySelector('h3').textContent = data.title;
+        el.querySelector('p').innerHTML = data.summary;
+        const badge = el.querySelector('.badge');
+        if ((data.notes || '').trim()) {
+          el.classList.add('has-note');
+          badge.textContent = Math.min(99, data.notes.trim().length);
+        } else {
+          el.classList.remove('has-note');
+          badge.textContent = '';
+        }
+      });
+      document.getElementById('globalNotes').value = state.globalNotes || '';
+      wireUpSvg();
+    }
+
+    function setActive(id) {
+      activeId = id;
+      nodeIds.forEach(nodeId => document.getElementById(nodeId).classList.toggle('active', nodeId === id));
+      const data = state.nodes[id];
+      document.getElementById('inspectorTitle').textContent = data.title;
+      document.getElementById('inspectorLead').textContent = `Editing ${id}. Notes here are for our conversation and won't change the structural arrows unless we revise the diagram.`;
+      document.getElementById('nodeTitle').value = data.title;
+      document.getElementById('nodeSummary').value = data.summary.replace(/<[^>]+>/g, '');
+      document.getElementById('nodeNotes').value = data.notes || '';
+    }
+
+    const inspectorBindings = {
+      nodeTitle: 'title',
+      nodeSummary: 'summary',
+      nodeNotes: 'notes'
+    };
+
+    Object.entries(inspectorBindings).forEach(([elementId, field]) => {
+      document.getElementById(elementId).addEventListener('input', (e) => {
+        if (!activeId) return;
+        state.nodes[activeId][field] = e.target.value;
+        if (field === 'summary') {
+          state.nodes[activeId][field] = e.target.value
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, ' ');
+        }
+        document.getElementById('inspectorTitle').textContent = state.nodes[activeId].title;
+        saveState();
+      });
+    });
+
+    document.getElementById('globalNotes').addEventListener('input', (e) => {
+      state.globalNotes = e.target.value;
+      saveState();
+    });
+
+    nodeIds.forEach(id => {
+      document.getElementById(id).addEventListener('click', () => setActive(id));
+    });
+
+    function mid(el) {
+      return {
+        x: el.offsetLeft + el.offsetWidth / 2,
+        y: el.offsetTop + el.offsetHeight / 2,
+        left: el.offsetLeft,
+        right: el.offsetLeft + el.offsetWidth,
+        top: el.offsetTop,
+        bottom: el.offsetTop + el.offsetHeight
+      };
+    }
+
+    function path(fromId, toId, label = '') {
+      const from = mid(document.getElementById(fromId));
+      const to = mid(document.getElementById(toId));
+      const startX = from.right;
+      const startY = from.y;
+      const endX = to.left;
+      const endY = to.y;
+      const bend = Math.max(40, (endX - startX) / 2);
+      const d = `M ${startX} ${startY} C ${startX + bend} ${startY}, ${endX - bend} ${endY}, ${endX} ${endY}`;
+      return { d, labelX: (startX + endX) / 2, labelY: ((startY + endY) / 2) - 10, label };
+    }
+
+    function downPath(fromId, toId, label = '') {
+      const from = mid(document.getElementById(fromId));
+      const to = mid(document.getElementById(toId));
+      const startX = from.x;
+      const startY = from.bottom;
+      const endX = to.x;
+      const endY = to.top;
+      const bend = Math.max(40, (endY - startY) / 2);
+      const d = `M ${startX} ${startY} C ${startX} ${startY + bend}, ${endX} ${endY - bend}, ${endX} ${endY}`;
+      return { d, labelX: ((startX + endX) / 2) + 10, labelY: (startY + endY) / 2, label };
+    }
+
+    function wireUpSvg() {
+      const svg = document.getElementById('wires');
+      const wires = [
+        path('jj', 'precheck', 'priorities / repo activity'),
+        downPath('pm', 'queue', 'discovery output'),
+        path('queue', 'cto', 'queue intake'),
+        downPath('precheck', 'cto', 'wake persistent session'),
+        downPath('cto', 'issues', 'triage + labels'),
+        path('cto', 'eng', 'dispatch isolated run'),
+        path('eng', 'review', 'handoff / status:new'),
+        downPath('review', 'qa', 'approved for validation'),
+        downPath('issues', 'closeout', 'evidence back to CTO'),
+        downPath('qa', 'closeout', 'validation evidence')
+      ];
+      svg.innerHTML = `<defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L9,3 z" fill="#64748b"></path>
+        </marker>
+      </defs>`;
+      wires.forEach(w => {
+        const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        pathEl.setAttribute('d', w.d);
+        pathEl.setAttribute('fill', 'none');
+        pathEl.setAttribute('stroke', '#64748b');
+        pathEl.setAttribute('stroke-width', '2.4');
+        pathEl.setAttribute('stroke-dasharray', '0');
+        pathEl.setAttribute('marker-end', 'url(#arrow)');
+        svg.appendChild(pathEl);
+        if (w.label) {
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', w.labelX);
+          text.setAttribute('y', w.labelY);
+          text.setAttribute('fill', '#cbd5e1');
+          text.setAttribute('font-size', '12');
+          text.setAttribute('text-anchor', 'middle');
+          text.textContent = w.label;
+          svg.appendChild(text);
+        }
+      });
+    }
+
+    document.getElementById('exportBtn').addEventListener('click', async () => {
+      const payload = JSON.stringify(state, null, 2);
+      try {
+        await navigator.clipboard.writeText(payload);
+        alert('Diagram JSON copied to clipboard. Paste it into chat and I can revise the next version.');
+      } catch {
+        prompt('Copy your diagram JSON:', payload);
+      }
+    });
+
+    document.getElementById('importBtn').addEventListener('click', () => {
+      const raw = prompt('Paste exported JSON here:');
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        state = {
+          nodes: { ...structuredClone(defaultState).nodes, ...(parsed.nodes || {}) },
+          globalNotes: parsed.globalNotes || ''
+        };
+        saveState();
+        if (activeId) setActive(activeId);
+      } catch {
+        alert('That JSON did not parse cleanly.');
+      }
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      if (!confirm('Reset this diagram back to the default view?')) return;
+      state = structuredClone(defaultState);
+      saveState();
+      activeId = null;
+      nodeIds.forEach(id => document.getElementById(id).classList.remove('active'));
+      document.getElementById('inspectorTitle').textContent = 'Select a box';
+      document.getElementById('inspectorLead').textContent = 'Click any node on the left to edit what it says or attach notes for our discussion.';
+      document.getElementById('nodeTitle').value = '';
+      document.getElementById('nodeSummary').value = '';
+      document.getElementById('nodeNotes').value = '';
+    });
+
+    renderNodes();
+    setActive('cto');
+    window.addEventListener('resize', wireUpSvg);
+  </script>
+</body>
+</html>

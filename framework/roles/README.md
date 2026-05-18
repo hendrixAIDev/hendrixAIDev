@@ -1,6 +1,14 @@
 # Roles
 
-Role-based agent system. Each dispatched sub-agent gets: cached role + shared overlay + role-specific overlay.
+**Purpose:** Describe the role materials available to CTO-authored dispatch prompts.
+
+**What this covers:**
+- Cached role definitions
+- Role-specific overlays
+- Shared role conventions
+- Remote role sources
+
+Role prompts are owned by the CTO session or another dispatching workflow. The dispatch-agent skill only transports the completed prompt into an isolated session.
 
 ## Active Roles
 
@@ -21,14 +29,14 @@ All roles also receive `overlays/shared-overlay.md` (tech stack, projects, tools
 
 ## How It Works
 
-1. CTO dispatches via `skills/dispatch-agent/` with `--role <name>`
-2. Dispatch script composes prompt from `skills/dispatch-agent/references/<name>.md`
-3. Template tells sub-agent to read: TICKET_SYSTEM → CONVENTIONS → cached role → shared overlay → role overlay
-4. Ticket sub-agent executes, updates ticket label, exits. PM discovery sub-agents update the project-local task queue instead of ticket labels.
+1. CTO chooses the role definition and overlays needed for the task.
+2. CTO writes the complete dispatch prompt, including role behavior and workflow-specific instructions.
+3. CTO dispatches the prompt through `skills/dispatch-agent/` with `--message` or `--message-file`.
+4. The sub-agent follows the supplied prompt and the referenced role materials.
 
 ## Key Files
 
-- **CONVENTIONS.md** — Rules for ALL sub-agents (commits, lint, testing, docs)
+- **CONVENTIONS.md** — Shared role practices (navigation, verification, docs, handoff)
 - **overlays/shared-overlay.md** — Common context (tech stack, Supabase, Streamlit, project list)
 
 ## Product Discovery Role

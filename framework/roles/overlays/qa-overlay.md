@@ -38,13 +38,13 @@
 5. **Verify deployment before testing** (see Deployment Verification below)
 6. Test on the **experiment endpoint** using `agent-browser` CLI (never localhost, never the `browser` tool)
 6. Upload screenshot evidence to the GitHub issue using `skills/gh-screenshot`
-7. Only set `status:cto-review` after experiment endpoint testing passes
+7. Return the ticket according to `framework/board-review/TICKET_SYSTEM.md`
 8. Clean up worktree:
    ```bash
    git worktree remove "$WT_PATH" --force
    git branch -d "$BRANCH" 2>/dev/null || true
    ```
-   On FAIL: also clean up worktree, then set `status:new`.
+   On FAIL: also clean up worktree, then return the ticket according to `TICKET_SYSTEM.md`.
 
 ---
 
@@ -82,8 +82,19 @@ agent-browser snapshot --compact 2>&1 | grep git_sha
 
 **⛔ NEVER skip browser testing** — code review + unit tests alone are NOT sufficient for Streamlit UI bugs.
 
+**Session isolation (MANDATORY):**
+- Do **not** hardcode `agent1` when multiple QA agents may run in parallel.
+- Set a unique `AGENT_BROWSER_SESSION` value per QA run, for example `agent1`, `agent2`, `agent3`, or a ticket-scoped name like `qa-240`.
+- Reuse the same session name only within the same QA run.
+- This keeps isolated browser state per QA agent and avoids session collisions with other concurrent verification passes.
+
+**Evidence priority for Streamlit QA:**
+- Primary evidence: screenshots plus `agent-browser snapshot` output that shows the visible/accessible rendered state.
+- Secondary evidence: test output and targeted text probes.
+- Debug-only evidence: raw body-text dumps. On Streamlit surfaces these can include noise from injected CSS, comments, or wrapper artifacts, so they must not outweigh screenshot/snapshot evidence when the two disagree.
+
 ```bash
-export AGENT_BROWSER_SESSION=agent1
+export AGENT_BROWSER_SESSION=qa-<ticket>-<agent>
 agent-browser open <ENDPOINT>/~/+/   # /~/+/ for Streamlit Cloud ONLY; for localhost use http://localhost:8501
 agent-browser snapshot --compact     # accessibility tree + ref IDs
 agent-browser click --ref <ref>
